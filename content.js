@@ -1,10 +1,37 @@
-// YouTube Vanced Plugin - Enhanced Content Script
+// YouTube Vanced Plugin - Optimized Content Script
 
 class YouTubeVancedPlugin {
   constructor() {
     this.isGeneralEnabled = true;
     this.isShortsEnabled = true;
     this.blockedCount = 0;
+    
+    // 性能优化：缓存和状态管理
+    this.lastBlockTime = 0;
+    this.blockedElements = new WeakSet(); // 使用WeakSet避免内存泄漏
+    this.isBlocking = false;
+    this.blockQueue = new Set();
+    
+    // 缓存编译后的选择器（按优先级排序）
+    this.primarySelectors = [
+      'ytd-rich-shelf-renderer[is-shorts]',
+      'ytd-reel-shelf-renderer',
+      '[page-subtype="shorts"]',
+      'ytd-shorts'
+    ];
+    
+    this.secondarySelectors = [
+      'ytd-video-renderer[is-shorts]',
+      'ytd-grid-video-renderer[is-shorts]',
+      'ytd-compact-video-renderer[is-shorts]',
+      '[is-shorts]',
+      '[shorts]'
+    ];
+    
+    this.linkSelectors = [
+      'a[href*="/shorts/"]'
+    ];
+    
     this.init();
   }
 
@@ -15,7 +42,6 @@ class YouTubeVancedPlugin {
       'shortsOnlyMode',
       'blockedShortsCount'
     ], (result) => {
-      // 安全检查：确保result存在且是对象
       if (!result || typeof result !== 'object') {
         console.warn('Storage result is undefined or not an object, using defaults');
         result = {};
@@ -26,31 +52,36 @@ class YouTubeVancedPlugin {
       this.blockedCount = result.blockedShortsCount || 0;
       
       if (this.isGeneralEnabled || this.isShortsEnabled) {
-        this.blockContent();
-        this.observeChanges();
+        this.blockContentOptimized();
+        this.observeChangesOptimized();
       }
     });
 
     // Listen for storage changes
     chrome.storage.onChanged.addListener((changes) => {
-      // 安全检查：确保changes存在且是对象
       if (!changes || typeof changes !== 'object') {
         console.warn('Storage changes is undefined or not an object');
         return;
       }
 
       try {
+        let needsUpdate = false;
+        
         if (changes.shortsBlockerEnabled && changes.shortsBlockerEnabled.newValue !== undefined) {
           this.isGeneralEnabled = changes.shortsBlockerEnabled.newValue;
+          needsUpdate = true;
         }
         if (changes.shortsOnlyMode && changes.shortsOnlyMode.newValue !== undefined) {
           this.isShortsEnabled = changes.shortsOnlyMode.newValue;
+          needsUpdate = true;
         }
         
-        if (this.isGeneralEnabled || this.isShortsEnabled) {
-          this.blockContent();
-        } else {
-          this.unblockContent();
+        if (needsUpdate) {
+          if (this.isGeneralEnabled || this.isShortsEnabled) {
+            this.blockContentOptimized();
+          } else {
+            this.unblockContent();
+          }
         }
       } catch (error) {
         console.error('Error handling storage changes:', error);
@@ -59,7 +90,6 @@ class YouTubeVancedPlugin {
 
     // Listen for messages from background script
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-      // 安全检查：确保message存在且有action
       if (!message || !message.action) {
         sendResponse({ success: false, error: 'Invalid message' });
         return;
@@ -73,7 +103,7 @@ class YouTubeVancedPlugin {
               this.isShortsEnabled = message.settings.shortsOnlyMode !== false;
               
               if (this.isGeneralEnabled || this.isShortsEnabled) {
-                this.blockContent();
+                this.blockContentOptimized();
               } else {
                 this.unblockContent();
               }
@@ -90,186 +120,187 @@ class YouTubeVancedPlugin {
     });
   }
 
-  // Enhanced selectors for different YouTube shorts elements
-  getShortsSelectors() {
-    return [
-      // Shorts shelf on homepage
-      'ytd-rich-shelf-renderer[is-shorts]',
-      'ytd-reel-shelf-renderer',
-      
-      // Individual shorts videos
-      'ytd-video-renderer[is-shorts]',
-      'ytd-grid-video-renderer[is-shorts]',
-      'ytd-compact-video-renderer[is-shorts]',
-      
-      // Shorts in search results
-      'ytd-video-renderer:has([aria-label*="Shorts"])',
-      'ytd-video-renderer:has([aria-label*="Short"])',
-      
-      // Shorts tab and navigation
-      'yt-tab-shape:has([title*="Shorts"])',
-      'ytd-guide-entry-renderer:has([title*="Shorts"])',
-      
-      // Shorts player page elements
-      '[page-subtype="shorts"]',
-      'ytd-shorts',
-      
-      // Mobile shorts elements
-      '.ytd-reel-video-renderer',
-      
-      // Additional selectors for shorts content
-      '[href*="/shorts/"]',
-      'a[href*="/shorts/"]',
-      
-      // Shorts recommendations
-      'ytd-compact-video-renderer:has([href*="/shorts/"])',
-      'ytd-video-renderer:has([href*="/shorts/"])',
-      
-      // Shorts in sidebar
-      'ytd-compact-video-renderer:has(.badge-shape-wiz__text:contains("SHORT"))',
-      
-      // More specific shorts identifiers
-      '[is-shorts]',
-      '[shorts]',
-      
-      // New shorts containers
-      'ytd-rich-item-renderer:has([href*="/shorts/"])',
-      'ytd-video-preview:has([href*="/shorts/"])'
-    ];
-  }
-
-  blockContent() {
+  // 优化的内容屏蔽方法
+  blockContentOptimized() {
     if (!this.isGeneralEnabled && !this.isShortsEnabled) return;
-
-    let blockedElements = 0;
-
-    // Block shorts if either general blocking or shorts-specific blocking is enabled
-    if (this.isGeneralEnabled || this.isShortsEnabled) {
-      blockedElements += this.blockShorts();
-    }
-
-    // Update statistics
-    if (blockedElements > 0) {
-      this.updateBlockedCount(blockedElements);
-    }
-  }
-
-  blockShorts() {
-    let blockedCount = 0;
-    const selectors = this.getShortsSelectors();
     
-    selectors.forEach(selector => {
-      try {
-        const elements = document.querySelectorAll(selector);
-        elements.forEach(element => {
-          if (this.hideElement(element)) {
-            blockedCount++;
-          }
-        });
-      } catch (e) {
-        // Skip invalid selectors
-      }
-    });
-
-    // Additional blocking strategies
-    blockedCount += this.blockShortsLinks();
-    blockedCount += this.blockShortsInFeed();
-    this.redirectShortsUrls();
-
-    return blockedCount;
-  }
-
-  blockShortsLinks() {
-    let blockedCount = 0;
-    const links = document.querySelectorAll('a[href*="/shorts/"]');
+    // 防止重复执行
+    if (this.isBlocking) {
+      return;
+    }
     
-    links.forEach(link => {
-      const videoContainer = link.closest(
-        'ytd-video-renderer, ytd-grid-video-renderer, ytd-compact-video-renderer, ytd-rich-item-renderer'
-      );
+    this.isBlocking = true;
+    const startTime = performance.now();
+    
+    // 使用requestAnimationFrame优化DOM操作
+    requestAnimationFrame(() => {
+      let blockedElements = 0;
       
-      if (videoContainer) {
-        if (this.hideElement(videoContainer)) {
-          blockedCount++;
+      try {
+        // 按优先级执行屏蔽
+        blockedElements += this.blockBySelectors(this.primarySelectors, true);
+        blockedElements += this.blockBySelectors(this.secondarySelectors, false);
+        blockedElements += this.blockShortsLinksOptimized();
+        
+        // 只在真正有元素被屏蔽时执行额外检查
+        if (blockedElements > 0) {
+          blockedElements += this.blockShortsInFeedOptimized();
+          this.redirectShortsUrls();
+          this.updateBlockedCount(blockedElements);
         }
-      } else {
-        if (this.hideElement(link)) {
-          blockedCount++;
-        }
+        
+        const endTime = performance.now();
+        console.debug(`Blocking completed in ${endTime - startTime}ms, blocked: ${blockedElements}`);
+        
+      } finally {
+        this.isBlocking = false;
+        this.lastBlockTime = Date.now();
       }
     });
+  }
 
+  // 优化的选择器屏蔽
+  blockBySelectors(selectors, isPrimary = false) {
+    let blockedCount = 0;
+    
+    for (const selector of selectors) {
+      try {
+        // 使用document.querySelectorAll的性能优化版本
+        const elements = document.querySelectorAll(selector + ':not([data-vanced-blocked])');
+        
+        if (elements.length === 0) continue;
+        
+        // 批量处理元素
+        const elementsArray = Array.from(elements);
+        blockedCount += this.hideElementsBatch(elementsArray);
+        
+        // 对于主要选择器，找到就可以跳过其他检查
+        if (isPrimary && blockedCount > 0) {
+          break;
+        }
+        
+      } catch (e) {
+        console.debug('Invalid selector:', selector);
+      }
+    }
+    
     return blockedCount;
   }
 
-  blockShortsInFeed() {
+  // 优化的链接屏蔽
+  blockShortsLinksOptimized() {
     let blockedCount = 0;
-    const videoRenderers = document.querySelectorAll(
-      'ytd-video-renderer, ytd-grid-video-renderer, ytd-compact-video-renderer'
+    
+    // 使用更具体的选择器减少查询范围
+    const containers = document.querySelectorAll(
+      'ytd-video-renderer:not([data-vanced-blocked]), ' +
+      'ytd-grid-video-renderer:not([data-vanced-blocked]), ' +
+      'ytd-compact-video-renderer:not([data-vanced-blocked]), ' +
+      'ytd-rich-item-renderer:not([data-vanced-blocked])'
     );
     
-    videoRenderers.forEach(renderer => {
-      // Check for shorts badges
-      const badges = renderer.querySelectorAll('.badge-shape-wiz__text, .ytd-badge-supported-renderer');
-      const hasShortsBadge = Array.from(badges).some(badge => 
-        badge.textContent && badge.textContent.toLowerCase().includes('short')
-      );
-      
-      if (hasShortsBadge) {
-        if (this.hideElement(renderer)) {
-          blockedCount++;
-        }
-        return;
+    const containersToBlock = [];
+    
+    for (const container of containers) {
+      const shortsLink = container.querySelector('a[href*="/shorts/"]');
+      if (shortsLink) {
+        containersToBlock.push(container);
       }
-      
-      // Check video duration for shorts detection
-      const timeElement = renderer.querySelector(
-        '#time-status .badge-shape-wiz__text, .ytd-thumbnail-overlay-time-status-renderer span'
-      );
-      
-      if (timeElement && timeElement.textContent) {
-        const duration = timeElement.textContent.trim();
-        // Detect short-form content (under 1 minute)
-        if (/^[0-5]?\d$/.test(duration) || /^0:[0-5]\d$/.test(duration)) {
-          const link = renderer.querySelector('a[href*="/watch"], a[href*="/shorts/"]');
-          if (link && (link.href.includes('/shorts/') || this.isLikelyShorts(renderer))) {
-            if (this.hideElement(renderer)) {
-              blockedCount++;
-            }
-          }
-        }
-      }
-    });
-
+    }
+    
+    if (containersToBlock.length > 0) {
+      blockedCount = this.hideElementsBatch(containersToBlock);
+    }
+    
     return blockedCount;
+  }
+
+  // 优化的Feed屏蔽
+  blockShortsInFeedOptimized() {
+    let blockedCount = 0;
+    
+    // 使用缓存的选择器减少重复查询
+    const videoRenderers = document.querySelectorAll(
+      'ytd-video-renderer:not([data-vanced-blocked]), ' +
+      'ytd-grid-video-renderer:not([data-vanced-blocked]), ' +
+      'ytd-compact-video-renderer:not([data-vanced-blocked])'
+    );
+    
+    const renderersToBlock = [];
+    
+    for (const renderer of videoRenderers) {
+      if (this.isShortVideo(renderer)) {
+        renderersToBlock.push(renderer);
+      }
+    }
+    
+    if (renderersToBlock.length > 0) {
+      blockedCount = this.hideElementsBatch(renderersToBlock);
+    }
+    
+    return blockedCount;
+  }
+
+  // 优化的短视频检测
+  isShortVideo(renderer) {
+    // 检查shorts标识
+    const badges = renderer.querySelectorAll('.badge-shape-wiz__text, .ytd-badge-supported-renderer');
+    for (const badge of badges) {
+      if (badge.textContent && badge.textContent.toLowerCase().includes('short')) {
+        return true;
+      }
+    }
+    
+    // 检查时长
+    const timeElement = renderer.querySelector(
+      '#time-status .badge-shape-wiz__text, .ytd-thumbnail-overlay-time-status-renderer span'
+    );
+    
+    if (timeElement && timeElement.textContent) {
+      const duration = timeElement.textContent.trim();
+      if (/^[0-5]?\d$/.test(duration) || /^0:[0-5]\d$/.test(duration)) {
+        const link = renderer.querySelector('a[href*="/watch"], a[href*="/shorts/"]');
+        return link && (link.href.includes('/shorts/') || this.isLikelyShorts(renderer));
+      }
+    }
+    
+    return false;
   }
 
   isLikelyShorts(element) {
-    // Additional heuristics to detect shorts
-    const thumbnail = element.querySelector('img');
-    if (thumbnail) {
-      // Shorts typically have vertical aspect ratios
-      const width = thumbnail.naturalWidth || parseInt(thumbnail.style.width);
-      const height = thumbnail.naturalHeight || parseInt(thumbnail.style.height);
-      if (height > width) return true;
+    // 缓存查询结果
+    if (element._vancedChecked) {
+      return element._vancedLikelyShorts || false;
     }
-
-    // Check for shorts-specific CSS classes or attributes
-    const shortsIndicators = [
-      'shorts', 'reel', 'vertical-video', 'short-form'
-    ];
-
-    return shortsIndicators.some(indicator => 
-      element.className.toLowerCase().includes(indicator) ||
-      element.querySelector(`[class*="${indicator}"]`)
-    );
+    
+    let isShorts = false;
+    
+    // 检查缩略图宽高比
+    const thumbnail = element.querySelector('img');
+    if (thumbnail && thumbnail.naturalWidth && thumbnail.naturalHeight) {
+      isShorts = thumbnail.naturalHeight > thumbnail.naturalWidth;
+    }
+    
+    // 检查CSS类名
+    if (!isShorts) {
+      const shortsIndicators = ['shorts', 'reel', 'vertical-video', 'short-form'];
+      isShorts = shortsIndicators.some(indicator => 
+        element.className.toLowerCase().includes(indicator) ||
+        element.querySelector(`[class*="${indicator}"]`)
+      );
+    }
+    
+    // 缓存结果
+    element._vancedChecked = true;
+    element._vancedLikelyShorts = isShorts;
+    
+    return isShorts;
   }
 
   redirectShortsUrls() {
-    // Enhanced URL redirection for shorts
     if (window.location.pathname.includes('/shorts/')) {
       const videoId = window.location.pathname.split('/shorts/')[1].split('?')[0];
-      if (videoId && videoId.length === 11) { // YouTube video ID length
+      if (videoId && videoId.length === 11) {
         const currentParams = new URLSearchParams(window.location.search);
         const newUrl = `https://www.youtube.com/watch?v=${videoId}${currentParams.toString() ? '&' + currentParams.toString() : ''}`;
         window.location.replace(newUrl);
@@ -277,36 +308,49 @@ class YouTubeVancedPlugin {
     }
   }
 
-  hideElement(element) {
-    if (element && !element.hasAttribute('data-vanced-blocked')) {
-      // Add smooth fade-out animation
-      element.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-      element.style.opacity = '0';
-      element.style.transform = 'scale(0.95)';
-      
-      setTimeout(() => {
+  // 批量隐藏元素（性能优化）
+  hideElementsBatch(elements) {
+    if (!elements || elements.length === 0) return 0;
+    
+    let hiddenCount = 0;
+    
+    // 使用DocumentFragment减少重排
+    for (const element of elements) {
+      if (element && !this.blockedElements.has(element)) {
+        this.blockedElements.add(element);
+        
+        // 立即隐藏，减少动画开销
         element.style.display = 'none';
         element.setAttribute('data-vanced-blocked', 'true');
-      }, 300);
-      
-      return true; // Successfully hidden
+        element.setAttribute('aria-hidden', 'true');
+        
+        hiddenCount++;
+      }
     }
-    return false;
+    
+    return hiddenCount;
   }
 
   unblockContent() {
     const blockedElements = document.querySelectorAll('[data-vanced-blocked]');
-    blockedElements.forEach(element => {
+    for (const element of blockedElements) {
       element.style.display = '';
       element.style.opacity = '';
       element.style.transform = '';
       element.style.transition = '';
       element.removeAttribute('data-vanced-blocked');
-    });
+      element.removeAttribute('aria-hidden');
+      this.blockedElements.delete(element);
+      
+      // 清除缓存
+      if (element._vancedChecked) {
+        delete element._vancedChecked;
+        delete element._vancedLikelyShorts;
+      }
+    }
   }
 
   updateBlockedCount(newBlocked) {
-    // 安全检查：确保newBlocked是有效数字
     if (typeof newBlocked !== 'number' || isNaN(newBlocked) || newBlocked < 0) {
       console.warn('Invalid blocked count:', newBlocked);
       return;
@@ -314,7 +358,6 @@ class YouTubeVancedPlugin {
 
     this.blockedCount += newBlocked;
     
-    // Update storage with new count
     try {
       chrome.storage.sync.set({
         blockedShortsCount: this.blockedCount
@@ -324,97 +367,85 @@ class YouTubeVancedPlugin {
     }
   }
 
-  observeChanges() {
-    // Enhanced mutation observer for better performance
+  // 优化的变化观察器
+  observeChangesOptimized() {
+    // 智能防抖机制
+    let mutationTimeout;
+    let pendingMutations = 0;
+    
     const observer = new MutationObserver((mutations) => {
       if (!this.isGeneralEnabled && !this.isShortsEnabled) return;
       
-      let shouldBlock = false;
-      let addedNodesCount = 0;
+      pendingMutations += mutations.length;
       
-      mutations.forEach((mutation) => {
-        if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-          addedNodesCount += mutation.addedNodes.length;
-          shouldBlock = true;
-        }
-      });
-      
-      if (shouldBlock) {
-        // Debounce blocking with adaptive delay based on activity
-        clearTimeout(this.blockTimeout);
-        const delay = Math.min(100 + (addedNodesCount * 10), 500);
-        
-        this.blockTimeout = setTimeout(() => {
-          this.blockContent();
-        }, delay);
+      // 清除之前的定时器
+      if (mutationTimeout) {
+        clearTimeout(mutationTimeout);
       }
+      
+      // 根据变化量动态调整延迟
+      const delay = Math.min(50 + pendingMutations * 5, 300);
+      
+      mutationTimeout = setTimeout(() => {
+        // 避免在滚动时频繁触发
+        const now = Date.now();
+        if (now - this.lastBlockTime < 100) {
+          return;
+        }
+        
+        this.blockContentOptimized();
+        pendingMutations = 0;
+      }, delay);
     });
 
-    // Start observing with optimized config
+    // 优化观察器配置
     observer.observe(document.body, {
       childList: true,
       subtree: true,
-      attributes: false, // Disable attribute observation for performance
+      attributes: false,
       characterData: false
     });
 
-    // Enhanced SPA navigation detection
+    // URL变化检测（优化版）
     let lastUrl = location.href;
-    const urlObserver = new MutationObserver(() => {
+    const urlCheckInterval = setInterval(() => {
       const url = location.href;
       if (url !== lastUrl) {
         lastUrl = url;
-        // Immediate blocking on navigation
-        setTimeout(() => this.blockContent(), 100);
-        // Follow-up blocking for dynamic content
-        setTimeout(() => this.blockContent(), 1000);
+        // URL变化时立即执行一次
+        setTimeout(() => this.blockContentOptimized(), 50);
+        // 延迟执行一次以捕获动态内容
+        setTimeout(() => this.blockContentOptimized(), 500);
+      }
+    }, 1000); // 降低检查频率
+
+    // 页面可见性变化时重新检查
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && (this.isGeneralEnabled || this.isShortsEnabled)) {
+        setTimeout(() => this.blockContentOptimized(), 100);
       }
     });
 
-    // 安全检查：确保title元素存在
-    const titleElement = document.querySelector('title');
-    if (titleElement) {
-      urlObserver.observe(titleElement, {
-        childList: true
-      });
-    } else {
-      console.warn('Title element not found, SPA navigation detection disabled');
-    }
-
-    // Periodic cleanup and re-blocking
-    setInterval(() => {
-      if (this.isGeneralEnabled || this.isShortsEnabled) {
-        this.blockContent();
+    // 清理函数
+    window.addEventListener('beforeunload', () => {
+      observer.disconnect();
+      clearInterval(urlCheckInterval);
+      if (mutationTimeout) {
+        clearTimeout(mutationTimeout);
       }
-    }, 5000);
+    });
   }
 }
 
 // Initialize the plugin
 const vancedPlugin = new YouTubeVancedPlugin();
 
-// Add visual feedback for blocked content
+// 优化的样式注入
 const style = document.createElement('style');
 style.textContent = `
   [data-vanced-blocked] {
-    transition: opacity 0.3s ease, transform 0.3s ease !important;
-  }
-  
-  .vanced-blocked-notice {
-    background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(76, 175, 80, 0.05));
-    border: 1px solid rgba(76, 175, 80, 0.2);
-    border-radius: 8px;
-    padding: 12px;
-    margin: 8px 0;
-    color: #4CAF50;
-    font-size: 14px;
-    text-align: center;
-    animation: slideIn 0.3s ease;
-  }
-  
-  @keyframes slideIn {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
+    display: none !important;
+    visibility: hidden !important;
   }
 `;
 document.head.appendChild(style); 

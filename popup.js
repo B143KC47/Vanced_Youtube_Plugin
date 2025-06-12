@@ -1,237 +1,424 @@
-// YouTube Vanced Plugin - Enhanced Popup Script (Dark Theme)
+// YouTube Vanced Plugin - Performance Optimized Popup Script
 
 document.addEventListener('DOMContentLoaded', function() {
-  // UI Elements
-  const enableToggle = document.getElementById('enableToggle');
-  const shortsToggle = document.getElementById('shortsToggle');
-  const statusText = document.getElementById('statusText');
-  const shortsStatus = document.getElementById('shortsStatus');
-  const blockedCount = document.getElementById('blockedCount');
-  const sessionsCount = document.getElementById('sessionsCount');
-  const refreshBtn = document.getElementById('refreshBtn');
-  const settingsBtn = document.getElementById('settingsBtn');
+  // 性能优化：缓存DOM元素，避免重复查询
+  const elements = {
+    enableToggle: document.getElementById('enableToggle'),
+    shortsToggle: document.getElementById('shortsToggle'),
+    statusText: document.getElementById('statusText'),
+    shortsStatus: document.getElementById('shortsStatus'),
+    blockedCount: document.getElementById('blockedCount'),
+    sessionsCount: document.getElementById('sessionsCount'),
+    refreshBtn: document.getElementById('refreshBtn'),
+    settingsBtn: document.getElementById('settingsBtn'),
+    controlGroups: document.querySelectorAll('.control-group, .stats-section')
+  };
 
-  // Animation delay for control groups
-  const controlGroups = document.querySelectorAll('.control-group, .stats-section');
-  controlGroups.forEach((group, index) => {
-    group.style.animationDelay = `${index * 0.1}s`;
-  });
+  // 性能优化：状态缓存，减少重复计算
+  let cachedSettings = {};
+  let cachedStatistics = {};
+  let animationTimeouts = new Map();
+  let isUpdating = false;
 
-  // Load current settings and statistics
-  loadSettings();
-  loadStatistics();
+  // 性能优化：初始化动画使用requestAnimationFrame
+  function initializeAnimations() {
+    elements.controlGroups.forEach((group, index) => {
+      group.style.animationDelay = `${index * 0.1}s`;
+      group.style.opacity = '0';
+      group.style.transform = 'translateY(10px)';
+    });
 
-  // Event Listeners
-  enableToggle.addEventListener('change', handleGeneralToggle);
-  shortsToggle.addEventListener('change', handleShortsToggle);
-  refreshBtn.addEventListener('click', handleRefresh);
-  settingsBtn.addEventListener('click', handleSettings);
+    // 使用requestAnimationFrame优化动画
+    let animationIndex = 0;
+    function animateNextGroup() {
+      if (animationIndex < elements.controlGroups.length) {
+        const group = elements.controlGroups[animationIndex];
+        group.style.opacity = '1';
+        group.style.transform = 'translateY(0)';
+        group.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+        
+        animationIndex++;
+        setTimeout(animateNextGroup, 50);
+      }
+    }
+    
+    requestAnimationFrame(() => {
+      setTimeout(animateNextGroup, 100);
+    });
+  }
 
+  // 性能优化：防抖函数，避免频繁执行
+  function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
+  }
+
+  // 性能优化：批量更新DOM，减少重排
+  function updateStatusBatch(generalEnabled, shortsEnabled) {
+    // 批量收集DOM更新操作
+    const updates = [];
+
+    // 通用状态更新
+    const generalStatusSpan = elements.statusText.querySelector('span');
+    if (generalEnabled) {
+      updates.push(() => {
+        elements.statusText.classList.add('status-active');
+        generalStatusSpan.textContent = 'Protection active';
+      });
+    } else {
+      updates.push(() => {
+        elements.statusText.classList.remove('status-active');
+        generalStatusSpan.textContent = 'Protection disabled';
+      });
+    }
+
+    // Shorts状态更新
+    const shortsStatusSpan = elements.shortsStatus.querySelector('span');
+    if (shortsEnabled) {
+      updates.push(() => {
+        elements.shortsStatus.classList.add('status-active');
+        shortsStatusSpan.textContent = 'Shorts are blocked';
+      });
+    } else {
+      updates.push(() => {
+        elements.shortsStatus.classList.remove('status-active');
+        shortsStatusSpan.textContent = 'Shorts are visible';
+      });
+    }
+
+    // 批量执行DOM更新
+    requestAnimationFrame(() => {
+      updates.forEach(update => update());
+    });
+  }
+
+  // 优化的设置加载
   function loadSettings() {
+    if (isUpdating) return;
+    
     chrome.storage.sync.get([
       'shortsBlockerEnabled', 
       'shortsOnlyMode',
       'blockedShortsCount',
       'sessionCount'
     ], function(result) {
-      // General blocker setting
+      // 检查缓存，避免不必要的更新
+      if (JSON.stringify(result) === JSON.stringify(cachedSettings)) {
+        return;
+      }
+      
+      cachedSettings = { ...result };
+      
       const isGeneralEnabled = result.shortsBlockerEnabled !== false;
-      enableToggle.checked = isGeneralEnabled;
-      
-      // Shorts-specific setting (new feature)
       const isShortsEnabled = result.shortsOnlyMode !== false;
-      shortsToggle.checked = isShortsEnabled;
       
-      updateStatus(isGeneralEnabled, isShortsEnabled);
-      updateStatistics(result.blockedShortsCount || 0, result.sessionCount || 1);
+      // 批量更新UI
+      requestAnimationFrame(() => {
+        elements.enableToggle.checked = isGeneralEnabled;
+        elements.shortsToggle.checked = isShortsEnabled;
+        updateStatusBatch(isGeneralEnabled, isShortsEnabled);
+        updateStatisticsBatch(result.blockedShortsCount || 0, result.sessionCount || 1);
+      });
     });
   }
 
+  // 优化的统计数据加载
   function loadStatistics() {
     chrome.storage.sync.get(['blockedShortsCount', 'sessionCount'], function(result) {
-      updateStatistics(result.blockedShortsCount || 0, result.sessionCount || 1);
+      // 检查缓存
+      if (JSON.stringify(result) === JSON.stringify(cachedStatistics)) {
+        return;
+      }
+      
+      cachedStatistics = { ...result };
+      updateStatisticsBatch(result.blockedShortsCount || 0, result.sessionCount || 1);
     });
   }
 
+  // 优化的统计数据更新
+  function updateStatisticsBatch(blocked, sessions) {
+    const updates = [];
+    
+    if (blocked !== null && blocked !== undefined) {
+      const formattedBlocked = formatNumber(blocked);
+      if (elements.blockedCount.textContent !== formattedBlocked) {
+        updates.push(() => {
+          elements.blockedCount.textContent = formattedBlocked;
+          addNumberAnimation(elements.blockedCount);
+        });
+      }
+    }
+    
+    if (sessions !== null && sessions !== undefined) {
+      const formattedSessions = formatNumber(sessions);
+      if (elements.sessionsCount.textContent !== formattedSessions) {
+        updates.push(() => {
+          elements.sessionsCount.textContent = formattedSessions;
+          addNumberAnimation(elements.sessionsCount);
+        });
+      }
+    }
+
+    if (updates.length > 0) {
+      requestAnimationFrame(() => {
+        updates.forEach(update => update());
+      });
+    }
+  }
+
+  // 优化的toggle处理
   function handleGeneralToggle() {
-    const isEnabled = enableToggle.checked;
+    if (isUpdating) return;
+    isUpdating = true;
+    
+    const isEnabled = elements.enableToggle.checked;
     
     chrome.storage.sync.set({
       shortsBlockerEnabled: isEnabled
     }, function() {
-      updateStatus(isEnabled, shortsToggle.checked);
-      refreshCurrentTab();
-      addToggleAnimation(statusText);
+      updateStatusBatch(isEnabled, elements.shortsToggle.checked);
+      debouncedRefreshTab();
+      addToggleAnimationOptimized(elements.statusText);
+      isUpdating = false;
     });
   }
 
   function handleShortsToggle() {
-    const isEnabled = shortsToggle.checked;
+    if (isUpdating) return;
+    isUpdating = true;
+    
+    const isEnabled = elements.shortsToggle.checked;
     
     chrome.storage.sync.set({
       shortsOnlyMode: isEnabled
     }, function() {
-      updateStatus(enableToggle.checked, isEnabled);
-      refreshCurrentTab();
-      addToggleAnimation(shortsStatus);
+      updateStatusBatch(elements.enableToggle.checked, isEnabled);
+      debouncedRefreshTab();
+      addToggleAnimationOptimized(elements.shortsStatus);
       
-      // Update blocked count
       if (isEnabled) {
-        incrementBlockedCount();
+        incrementBlockedCountOptimized();
       }
+      isUpdating = false;
     });
   }
 
+  // 优化的刷新处理
+  const debouncedRefreshTab = debounce(function() {
+    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+      if (tabs[0] && tabs[0].url && tabs[0].url.includes('youtube.com')) {
+        chrome.tabs.reload(tabs[0].id);
+      }
+    });
+  }, 300);
+
   function handleRefresh() {
-    addButtonAnimation(refreshBtn);
-    refreshCurrentTab();
+    addButtonAnimationOptimized(elements.refreshBtn);
+    debouncedRefreshTab();
     
-    // Reload statistics
+    // 延迟重新加载统计数据
     setTimeout(() => {
       loadStatistics();
     }, 500);
   }
 
   function handleSettings() {
-    addButtonAnimation(settingsBtn);
+    addButtonAnimationOptimized(elements.settingsBtn);
     
-    // Increment session count
+    // 优化session计数更新
     chrome.storage.sync.get(['sessionCount'], function(result) {
       const newCount = (result.sessionCount || 1) + 1;
       chrome.storage.sync.set({ sessionCount: newCount });
-      updateStatistics(null, newCount);
+      updateStatisticsBatch(null, newCount);
     });
     
-    // Could open options page in the future
     console.log('Settings clicked - Advanced options coming soon!');
   }
 
-  function updateStatus(generalEnabled, shortsEnabled) {
-    // Update general status - simplified for dark theme
-    const generalStatusDot = statusText.querySelector('.status-dot');
-    const generalStatusText = statusText.querySelector('span');
-    
-    if (generalEnabled) {
-      statusText.classList.add('status-active');
-      generalStatusText.textContent = 'Protection active';
-    } else {
-      statusText.classList.remove('status-active');
-      generalStatusText.textContent = 'Protection disabled';
+  // 优化的动画函数
+  function addToggleAnimationOptimized(element) {
+    // 清除可能存在的动画
+    const timeoutId = animationTimeouts.get(element);
+    if (timeoutId) {
+      clearTimeout(timeoutId);
     }
 
-    // Update shorts-specific status
-    const shortsStatusDot = shortsStatus.querySelector('.status-dot');
-    const shortsStatusText = shortsStatus.querySelector('span');
+    element.style.transform = 'scale(1.02)';
+    element.style.transition = 'transform 0.2s ease';
     
-    if (shortsEnabled) {
-      shortsStatus.classList.add('status-active');
-      shortsStatusText.textContent = 'Shorts are blocked';
-    } else {
-      shortsStatus.classList.remove('status-active');
-      shortsStatusText.textContent = 'Shorts are visible';
-    }
+    const newTimeoutId = setTimeout(() => {
+      element.style.transform = 'scale(1)';
+      animationTimeouts.delete(element);
+    }, 150);
+    
+    animationTimeouts.set(element, newTimeoutId);
   }
 
-  function updateStatistics(blocked, sessions) {
-    if (blocked !== null) {
-      blockedCount.textContent = formatNumber(blocked);
-      animateNumber(blockedCount);
+  function addButtonAnimationOptimized(button) {
+    const timeoutId = animationTimeouts.get(button);
+    if (timeoutId) {
+      clearTimeout(timeoutId);
     }
-    if (sessions !== null) {
-      sessionsCount.textContent = formatNumber(sessions);
-      animateNumber(sessionsCount);
-    }
+
+    button.style.transform = 'scale(0.96)';
+    button.style.transition = 'transform 0.1s ease';
+    
+    const newTimeoutId = setTimeout(() => {
+      button.style.transform = 'scale(1)';
+      animationTimeouts.delete(button);
+    }, 100);
+    
+    animationTimeouts.set(button, newTimeoutId);
   }
 
-  function incrementBlockedCount() {
+  function addNumberAnimation(element) {
+    const timeoutId = animationTimeouts.get(element);
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+
+    element.style.transform = 'scale(1.1)';
+    element.style.transition = 'transform 0.2s ease';
+    
+    const newTimeoutId = setTimeout(() => {
+      element.style.transform = 'scale(1)';
+      animationTimeouts.delete(element);
+    }, 200);
+    
+    animationTimeouts.set(element, newTimeoutId);
+  }
+
+  // 优化的数字格式化（添加缓存）
+  const formatCache = new Map();
+  function formatNumber(num) {
+    if (formatCache.has(num)) {
+      return formatCache.get(num);
+    }
+    
+    let result;
+    if (num >= 1000000) {
+      result = (num / 1000000).toFixed(1) + 'M';
+    } else if (num >= 1000) {
+      result = (num / 1000).toFixed(1) + 'K';
+    } else {
+      result = num.toString();
+    }
+    
+    // 限制缓存大小
+    if (formatCache.size > 100) {
+      const firstKey = formatCache.keys().next().value;
+      formatCache.delete(firstKey);
+    }
+    
+    formatCache.set(num, result);
+    return result;
+  }
+
+  // 优化的blocked count增加
+  function incrementBlockedCountOptimized() {
     chrome.storage.sync.get(['blockedShortsCount'], function(result) {
       const newCount = (result.blockedShortsCount || 0) + Math.floor(Math.random() * 5) + 1;
       chrome.storage.sync.set({ blockedShortsCount: newCount });
-      updateStatistics(newCount, null);
+      updateStatisticsBatch(newCount, null);
     });
   }
 
-  function refreshCurrentTab() {
-    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-      if (tabs[0] && tabs[0].url && tabs[0].url.includes('youtube.com')) {
-        chrome.tabs.reload(tabs[0].id);
+  // 优化的hover效果
+  function addHoverEffects() {
+    elements.controlGroups.forEach(group => {
+      let hoverTimeout;
+      
+      group.addEventListener('mouseenter', () => {
+        clearTimeout(hoverTimeout);
+        group.style.transform = 'translateY(-1px)';
+        group.style.transition = 'transform 0.2s ease';
+      });
+      
+      group.addEventListener('mouseleave', () => {
+        hoverTimeout = setTimeout(() => {
+          group.style.transform = 'translateY(0)';
+        }, 50);
+      });
+    });
+  }
+
+  // 智能统计更新 - 根据页面可见性调整频率
+  let statisticsInterval;
+  function startSmartStatisticsUpdate() {
+    // 降低更新频率到60秒
+    statisticsInterval = setInterval(() => {
+      if (!document.hidden) {
+        loadStatistics();
+      }
+    }, 60000);
+
+    // 页面可见性变化时立即更新
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        loadStatistics();
       }
     });
   }
 
-  // Animation helpers
-  function addToggleAnimation(element) {
-    element.style.transform = 'scale(1.02)';
-    element.style.transition = 'transform 0.2s ease';
-    setTimeout(() => {
-      element.style.transform = 'scale(1)';
-    }, 150);
-  }
-
-  function addButtonAnimation(button) {
-    button.style.transform = 'scale(0.96)';
-    button.style.transition = 'transform 0.1s ease';
-    setTimeout(() => {
-      button.style.transform = 'scale(1)';
-    }, 100);
-  }
-
-  function animateNumber(element) {
-    element.style.transform = 'scale(1.1)';
-    element.style.transition = 'transform 0.2s ease';
-    setTimeout(() => {
-      element.style.transform = 'scale(1)';
-    }, 200);
-  }
-
-  function formatNumber(num) {
-    if (num >= 1000000) {
-      return (num / 1000000).toFixed(1) + 'M';
-    }
-    if (num >= 1000) {
-      return (num / 1000).toFixed(1) + 'K';
-    }
-    return num.toString();
-  }
-
-  // Auto-refresh statistics every 30 seconds
-  setInterval(() => {
-    loadStatistics();
-  }, 30000);
-
-  // Add subtle hover effects to control groups
-  controlGroups.forEach(group => {
-    group.addEventListener('mouseenter', () => {
-      group.style.transform = 'translateY(-1px)';
-      group.style.transition = 'transform 0.2s ease';
-    });
-    
-    group.addEventListener('mouseleave', () => {
-      group.style.transform = 'translateY(0)';
-    });
-  });
-
-  // Initialize with a welcome animation
-  setTimeout(() => {
-    controlGroups.forEach((group, index) => {
-      setTimeout(() => {
-        group.style.opacity = '1';
-        group.style.transform = 'translateY(0)';
-      }, index * 50);
-    });
-  }, 100);
-
-  // Add keyboard navigation support
-  document.addEventListener('keydown', (e) => {
-    if (e.key === ' ' || e.key === 'Enter') {
-      const focusedElement = document.activeElement;
-      if (focusedElement && focusedElement.closest('.toggle-switch')) {
-        const checkbox = focusedElement.closest('.toggle-switch').querySelector('input[type="checkbox"]');
-        if (checkbox) {
-          checkbox.click();
-          e.preventDefault();
+  // 键盘导航优化
+  function setupKeyboardNavigation() {
+    document.addEventListener('keydown', (e) => {
+      if (e.key === ' ' || e.key === 'Enter') {
+        const focusedElement = document.activeElement;
+        if (focusedElement && focusedElement.closest('.toggle-switch')) {
+          const checkbox = focusedElement.closest('.toggle-switch').querySelector('input[type="checkbox"]');
+          if (checkbox) {
+            checkbox.click();
+            e.preventDefault();
+          }
         }
       }
+    });
+  }
+
+  // 清理函数
+  function cleanup() {
+    if (statisticsInterval) {
+      clearInterval(statisticsInterval);
     }
-  });
+    
+    // 清理所有动画timeout
+    animationTimeouts.forEach(timeoutId => clearTimeout(timeoutId));
+    animationTimeouts.clear();
+    
+    // 清理缓存
+    formatCache.clear();
+  }
+
+  // 页面卸载时清理
+  window.addEventListener('beforeunload', cleanup);
+
+  // 初始化应用
+  function initialize() {
+    // 绑定事件监听器
+    elements.enableToggle.addEventListener('change', handleGeneralToggle);
+    elements.shortsToggle.addEventListener('change', handleShortsToggle);
+    elements.refreshBtn.addEventListener('click', handleRefresh);
+    elements.settingsBtn.addEventListener('click', handleSettings);
+
+    // 加载数据
+    loadSettings();
+    loadStatistics();
+    
+    // 初始化UI效果
+    initializeAnimations();
+    addHoverEffects();
+    setupKeyboardNavigation();
+    startSmartStatisticsUpdate();
+  }
+
+  // 启动应用
+  initialize();
 }); 
