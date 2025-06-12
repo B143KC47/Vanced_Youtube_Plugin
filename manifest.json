@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "YouTube Vanced Plugin",
+  "version": "2.0",
+  "description": "Enhanced YouTube experience with advanced Shorts control, modern UI, and smart content filtering",
+  "permissions": [
+    "activeTab",
+    "storage"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["*://*.youtube.com/*"],
+      "js": ["content.js"],
+      "css": ["styles.css"],
+      "run_at": "document_start"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "YouTube Vanced - Enhanced Experience"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "host_permissions": [
+    "*://*.youtube.com/*"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["styles.css"],
+      "matches": ["*://*.youtube.com/*"]
+    }
+  ]
+} 

@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YouTube Vanced Plugin</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 360px;
+      min-height: 480px;
+      font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #0d1117;
+      color: #ffffff;
+      overflow: hidden;
+    }
+
+    .header {
+      background: #161b22;
+      padding: 20px;
+      text-align: center;
+      border-bottom: 1px solid #30363d;
+    }
+
+    .logo {
+      width: 48px;
+      height: 48px;
+      background: #ffffff;
+      border-radius: 12px;
+      margin: 0 auto 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      color: #0d1117;
+      font-weight: 600;
+    }
+
+    .title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: #ffffff;
+    }
+
+    .subtitle {
+      font-size: 13px;
+      color: #8b949e;
+      font-weight: 400;
+    }
+
+    .content {
+      padding: 16px;
+    }
+
+    .control-group {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+      transition: border-color 0.2s ease;
+    }
+
+    .control-group:hover {
+      border-color: #484f58;
+    }
+
+    .control-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .control-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .control-icon {
+      width: 32px;
+      height: 32px;
+      background: #21262d;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      color: #ffffff;
+    }
+
+    .control-text h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #ffffff;
+      margin-bottom: 2px;
+    }
+
+    .control-text p {
+      font-size: 12px;
+      color: #8b949e;
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 44px;
+      height: 24px;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: #30363d;
+      transition: 0.3s;
+      border-radius: 24px;
+      border: 1px solid #484f58;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 2px;
+      bottom: 2px;
+      background: #8b949e;
+      transition: 0.3s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background: #ffffff;
+      border-color: #ffffff;
+    }
+
+    input:checked + .slider:before {
+      background: #0d1117;
+      transform: translateX(20px);
+    }
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: #21262d;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      font-size: 12px;
+      color: #e6e6e6;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #8b949e;
+    }
+
+    .status-active .status-dot {
+      background: #ffffff;
+    }
+
+    .stats-section {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+
+    .stats-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .stats-icon {
+      width: 32px;
+      height: 32px;
+      background: #21262d;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      color: #ffffff;
+    }
+
+    .stats-text h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #ffffff;
+      margin-bottom: 2px;
+    }
+
+    .stats-text p {
+      font-size: 12px;
+      color: #8b949e;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .stat-item {
+      background: #21262d;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 12px;
+      text-align: center;
+    }
+
+    .stat-number {
+      font-size: 20px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 4px;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: #8b949e;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 10px 16px;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: #21262d;
+      color: #e6e6e6;
+      text-align: center;
+    }
+
+    .btn:hover {
+      background: #30363d;
+      border-color: #484f58;
+    }
+
+    .btn-primary {
+      background: #ffffff;
+      color: #0d1117;
+      border-color: #ffffff;
+    }
+
+    .btn-primary:hover {
+      background: #e6e6e6;
+      border-color: #e6e6e6;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 12px 16px;
+      font-size: 11px;
+      color: #6e7681;
+      border-top: 1px solid #30363d;
+      background: #0d1117;
+    }
+
+    .animation-enter {
+      animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Focus states for accessibility */
+    .toggle-switch:focus-within .slider {
+      box-shadow: 0 0 0 2px #ffffff40;
+    }
+
+    .btn:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px #ffffff40;
+    }
+
+    /* Dark theme optimizations */
+    ::selection {
+      background: #ffffff40;
+    }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #0d1117;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #30363d;
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #484f58;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">🎯</div>
+    <div class="title">YouTube Vanced</div>
+    <div class="subtitle">Enhanced YouTube Experience</div>
+  </div>
+
+  <div class="content">
+    <!-- YouTube Shorts Control -->
+    <div class="control-group animation-enter">
+      <div class="control-header">
+        <div class="control-info">
+          <div class="control-icon">📱</div>
+          <div class="control-text">
+            <h3>YouTube Shorts</h3>
+            <p>Block short-form videos</p>
+          </div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="shortsToggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="status-indicator status-active" id="shortsStatus">
+        <div class="status-dot"></div>
+        <span>Shorts are blocked</span>
+      </div>
+    </div>
+
+    <!-- General Blocker Control -->
+    <div class="control-group animation-enter">
+      <div class="control-header">
+        <div class="control-info">
+          <div class="control-icon">🛡️</div>
+          <div class="control-text">
+            <h3>Content Filter</h3>
+            <p>Enhanced blocking system</p>
+          </div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="enableToggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="status-indicator status-active" id="statusText">
+        <div class="status-dot"></div>
+        <span>Protection active</span>
+      </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="stats-section animation-enter">
+      <div class="stats-header">
+        <div class="stats-icon">📊</div>
+        <div class="stats-text">
+          <h3>Statistics</h3>
+          <p>Blocking performance</p>
+        </div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-number" id="blockedCount">0</div>
+          <div class="stat-label">Shorts Blocked</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number" id="sessionsCount">1</div>
+          <div class="stat-label">Sessions</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="action-buttons">
+      <button class="btn" id="refreshBtn">🔄 Refresh</button>
+      <button class="btn btn-primary" id="settingsBtn">⚙️ Settings</button>
+    </div>
+  </div>
+
+  <div class="footer">
+    v2.0 - Advanced YouTube Enhancement
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html> 

@@ -1,0 +1,232 @@
+/* YouTube Vanced Plugin - Enhanced Styles */
+
+/* === Primary Shorts Blocking === */
+
+/* Hide shorts shelf */
+ytd-rich-shelf-renderer[is-shorts],
+ytd-reel-shelf-renderer {
+  display: none !important;
+}
+
+/* Hide individual shorts videos */
+ytd-video-renderer[is-shorts],
+ytd-grid-video-renderer[is-shorts],
+ytd-compact-video-renderer[is-shorts] {
+  display: none !important;
+}
+
+/* Hide shorts in search results */
+ytd-video-renderer:has([aria-label*="Shorts"]),
+ytd-video-renderer:has([aria-label*="Short"]) {
+  display: none !important;
+}
+
+/* Hide shorts tab in navigation */
+yt-tab-shape:has([title*="Shorts"]),
+ytd-guide-entry-renderer:has([title*="Shorts"]) {
+  display: none !important;
+}
+
+/* Hide shorts links */
+a[href*="/shorts/"] {
+  display: none !important;
+}
+
+/* Hide elements with shorts attribute */
+[is-shorts],
+[shorts] {
+  display: none !important;
+}
+
+/* Hide shorts player elements */
+[page-subtype="shorts"],
+ytd-shorts {
+  display: none !important;
+}
+
+/* Hide reel video renderers */
+.ytd-reel-video-renderer {
+  display: none !important;
+}
+
+/* === Enhanced Vanced Plugin Blocking === */
+
+/* Hide elements marked as blocked by the enhanced script */
+[data-vanced-blocked] {
+  display: none !important;
+  height: 0 !important;
+  width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  opacity: 0 !important;
+  transform: scale(0) !important;
+  transition: all 0.3s ease !important;
+}
+
+/* === Smooth Animations === */
+
+/* Fade-out animation for blocking */
+[data-vanced-blocked] {
+  animation: fadeOut 0.3s ease-out forwards;
+}
+
+@keyframes fadeOut {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+/* Fade-in animation for unblocking */
+:not([data-vanced-blocked]) {
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* === Enhanced Targeting === */
+
+/* New containers and elements */
+ytd-rich-item-renderer:has([href*="/shorts/"]) {
+  display: none !important;
+}
+
+ytd-video-preview:has([href*="/shorts/"]) {
+  display: none !important;
+}
+
+/* Shorts badges and indicators */
+.badge-shape-wiz__text:contains("SHORT"),
+.badge-shape-wiz__text:contains("SHORTS") {
+  display: none !important;
+}
+
+/* Vertical video indicators (common in shorts) */
+[class*="vertical-video"],
+[class*="short-form"],
+[class*="reel"] {
+  display: none !important;
+}
+
+/* === Responsive Design === */
+
+/* Mobile/responsive layouts */
+@media (max-width: 768px) {
+  ytd-reel-shelf-renderer,
+  ytd-rich-shelf-renderer[is-shorts],
+  [data-vanced-blocked] {
+    display: none !important;
+  }
+  
+  /* Mobile shorts feed */
+  ytd-app[is-mobile] [data-vanced-blocked] {
+    height: 0 !important;
+    margin: 0 !important;
+  }
+}
+
+/* Tablet layouts */
+@media (min-width: 769px) and (max-width: 1024px) {
+  [data-vanced-blocked] {
+    transition: all 0.2s ease !important;
+  }
+}
+
+/* === Advanced Selectors === */
+
+/* Hide shorts recommendations in sidebar */
+ytd-compact-video-renderer:has([href*="/shorts/"]),
+ytd-video-renderer:has([href*="/shorts/"]) {
+  display: none !important;
+}
+
+/* Hide shorts in search suggestions */
+ytd-search-suggestion-renderer:has([href*="/shorts/"]) {
+  display: none !important;
+}
+
+/* Hide shorts in playlists */
+ytd-playlist-video-renderer:has([href*="/shorts/"]) {
+  display: none !important;
+}
+
+/* === Performance Optimizations === */
+
+/* Prevent layout shifts */
+[data-vanced-blocked] {
+  position: absolute !important;
+  left: -9999px !important;
+  top: -9999px !important;
+  visibility: hidden !important;
+}
+
+/* Optimize rendering */
+[data-vanced-blocked] * {
+  display: none !important;
+}
+
+/* === Visual Feedback === */
+
+/* Subtle indicator for blocked areas */
+.vanced-blocked-area::before {
+  content: "🎯 Content blocked by YouTube Vanced";
+  display: block;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(76, 175, 80, 0.05));
+  border: 1px solid rgba(76, 175, 80, 0.2);
+  border-radius: 6px;
+  color: #4CAF50;
+  font-size: 12px;
+  text-align: center;
+  margin: 4px 0;
+  opacity: 0.7;
+}
+
+/* === Accessibility === */
+
+/* Screen reader friendly hiding */
+[data-vanced-blocked][aria-hidden="true"] {
+  speak: none;
+}
+
+/* === Dark Mode Support === */
+
+@media (prefers-color-scheme: dark) {
+  .vanced-blocked-area::before {
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.15), rgba(76, 175, 80, 0.08));
+    border-color: rgba(76, 175, 80, 0.3);
+    color: #66BB6A;
+  }
+}
+
+/* === High Contrast Mode === */
+
+@media (prefers-contrast: high) {
+  [data-vanced-blocked] {
+    border: 2px solid transparent !important;
+  }
+}
+
+/* === Reduced Motion Support === */
+
+@media (prefers-reduced-motion: reduce) {
+  [data-vanced-blocked],
+  [data-vanced-blocked] * {
+    animation: none !important;
+    transition: none !important;
+  }
+} 

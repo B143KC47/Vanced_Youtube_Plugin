@@ -1,0 +1,32 @@
+# Operating System Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Editor Files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
+
+# Chrome Extension Build Files
+*.zip
+*.crx
+*.pem
+
+# Node modules (if using build tools)
+node_modules/
+npm-debug.log*
+
+# Temporary files
+*.tmp
+*.temp 
