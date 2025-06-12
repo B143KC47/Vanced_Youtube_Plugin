@@ -1,13 +1,16 @@
-# YouTube Shorts Blocker Chrome Extension
+# YouTube Shorts Blocker Chrome Extension  
+📺 油管短视频屏蔽器 - Chrome扩展
 
-A powerful Chrome extension that blocks and hides YouTube Shorts from your YouTube browsing experience.
+A powerful Chrome extension that blocks and hides YouTube Shorts from your YouTube browsing experience.  
+一款强大的浏览器扩展，可自动屏蔽YouTube Shorts短视频，还您清爽的观看体验。
 
-## Features
-
-- 🚫 **Complete Shorts Blocking**: Hides YouTube Shorts from homepage, search results, and recommendations
-- 🔄 **Real-time Detection**: Automatically detects and blocks newly loaded shorts content
-- 🎯 **Smart Filtering**: Uses multiple detection methods including URL patterns, video duration, and element attributes
-- 🌐 **URL Redirection**: Automatically redirects shorts URLs to regular video format
+## Features 功能特点
+- 🚫 **Complete Shorts Blocking**...  
+- 🚫 **全面屏蔽**：首页、搜索页、推荐栏中的短视频内容一键消失
+- 🔄 **Real-time Detection**...  
+- 🔄 **实时监控**：动态加载的内容也逃不过火眼金睛
+- 🌐 **URL Redirection**...  
+- 🌐 **智能跳转**：误点shorts链接自动转正常视频模式
 - ⚡ **Toggle Control**: Easy on/off toggle through popup interface
 - 🎨 **Clean UI**: Modern, intuitive popup interface with visual status indicators
 - 💾 **Persistent Settings**: Remembers your preferences across browser sessions
@@ -22,12 +25,14 @@ A powerful Chrome extension that blocks and hides YouTube Shorts from your YouTu
 - Direct shorts URLs (redirected to regular video format)
 - Mobile shorts elements
 
-## Installation
-
-1. **Download or Clone** this repository to your computer
-2. **Open Chrome** and navigate to `chrome://extensions/`
+## Installation 安装指南
+1. **Download or Clone**...  
+1. **获取文件**：下载或克隆本仓库到本地
+2. **Open Chrome**...  
+2. **打开Chrome**：地址栏输入 `chrome://extensions/`
 3. **Enable Developer Mode** by toggling the switch in the top right corner
-4. **Click "Load unpacked"** and select the folder containing the extension files
+4. **Click "Load unpacked"**...  
+4. **加载扩展**：点击「加载已解压的扩展程序」选择项目文件夹
 5. **Pin the extension** to your toolbar for easy access
 
 ## Usage
@@ -37,7 +42,10 @@ A powerful Chrome extension that blocks and hides YouTube Shorts from your YouTu
 3. **Refresh YouTube pages** to apply changes (automatic refresh for current tab)
 4. **Enjoy a shorts-free YouTube experience!**
 
-## Technical Details
+## Technical Details 技术实现
+### How It Works 工作原理
+5. **Attribute Detection**...  
+5. **特征识别**：通过20+个元素特征精准识别短视频
 
 ### Files Structure
 - `manifest.json` - Extension configuration and permissions
@@ -81,13 +89,13 @@ The extension uses multiple detection methods:
 - Check for Chrome updates
 - Try reloading the extension
 
-## Privacy
-
-This extension:
-- ✅ Works entirely locally in your browser
-- ✅ Does not collect or transmit any data
-- ✅ Does not require internet connectivity
-- ✅ Only accesses YouTube pages when you visit them
+## Privacy 隐私保护
+This extension:  
+本扩展：
+- ✅ Works entirely locally...  
+- ✅ 完全本地运行：不上传任何数据
+- ✅ Only accesses...  
+- ✅ 仅在访问YouTube时激活：不监控其他网站
 
 ## Contributing
 
@@ -99,4 +107,5 @@ This project is open source and available under the MIT License.
 
 ---
 
-**Enjoy a distraction-free YouTube experience! 🎉** 
+**Enjoy a distraction-free YouTube experience! 🎉**  
+**现在开始，享受纯净的YouTube观看体验吧！🎉** 
