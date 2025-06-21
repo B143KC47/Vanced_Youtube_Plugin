@@ -517,7 +517,9 @@ class YouTubeVancedPlugin {
 
   /* ================= Ad Blocking ================= */
   hideAdsOptimized() {
+    // Improved ad removal logic: also collapse the surrounding layout container to avoid blank spaces
     const adSelectors = [
+      // Individual ad renderers
       'ytd-display-ad-renderer',
       'ytd-promoted-sparkles-text-search-renderer',
       'ytd-video-masthead-ad-v3-renderer',
@@ -527,6 +529,7 @@ class YouTubeVancedPlugin {
       'ytd-search-pyv-renderer',
       'ytd-companion-slot-renderer',
       'ytd-banner-promo-renderer',
+      // Player & overlay ads
       '#player-ads',
       '.ytp-ad-progress-list',
       '.video-ads',
@@ -534,15 +537,27 @@ class YouTubeVancedPlugin {
       '.ytp-ad-overlay-container'
     ];
 
-    let blocked = 0;
+    // Collect unique containers that influence spacing so we can hide them in one pass
+    const containers = new Set();
+
     adSelectors.forEach(sel => {
-      const els = document.querySelectorAll(sel + ':not([data-vanced-blocked])');
-      if (els.length) {
-        blocked += this.hideElementsBatch(Array.from(els));
-      }
+      document.querySelectorAll(sel + ':not([data-vanced-blocked])').forEach(el => {
+        // Attempt to climb up to the feed/grid item that actually contributes height.
+        const container =
+          el.closest('ytd-rich-item-renderer, ytd-rich-section-renderer, ytd-ad-slot-renderer, ytd-carousel-ad-renderer, ytd-search-pyv-renderer, ytd-in-feed-ad-layout-renderer') ||
+          el;
+
+        if (!this.blockedElements.has(container)) {
+          containers.add(container);
+        }
+      });
     });
-    if(blocked>0) {
-      console.debug('Ad elements blocked:', blocked);
+
+    if (containers.size > 0) {
+      const blocked = this.hideElementsBatch(Array.from(containers));
+      if (blocked > 0) {
+        console.debug('Ad containers blocked:', blocked);
+      }
     }
   }
 
