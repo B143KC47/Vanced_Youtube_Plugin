@@ -178,16 +178,14 @@ class YouTubeVancedPlugin {
             break;
           case 'getVideoFormats':
             {
-              const resp = this.getAvailableFormats('video');
-              sendResponse(resp);
+              this.getAvailableFormatsAsync('video').then(sendResponse);
+              return true;
             }
-            break;
           case 'getAudioFormats':
             {
-              const resp = this.getAvailableFormats('audio');
-              sendResponse(resp);
+              this.getAvailableFormatsAsync('audio').then(sendResponse);
+              return true;
             }
-            break;
           default:
             sendResponse({ success: false, error: 'Unknown action' });
         }
@@ -653,46 +651,51 @@ class YouTubeVancedPlugin {
     return null;
   }
 
-  fetchSponsorSegments(videoId) {
+  async fetchSponsorSegments(videoId) {
     const cached = this._sponsorCache.get(videoId);
     const now = Date.now();
 
-    // Re-use cache if fresher than 6 hours
+    // Use recent cache (≤ 6h)
     if (cached && (now - cached.ts) < 6 * 60 * 60 * 1000) {
       this.sponsorSegments = cached.segments;
       return;
     }
 
-    // Rate-limit network calls (10 s)
+    // Basic rate-limit (10 s)
     if (now - this.lastFetchTime < 10000) return;
     this.lastFetchTime = now;
 
     const categories = encodeURIComponent('["sponsor","selfpromo","interaction","intro","outro"]');
     const api = `https://sponsor.ajay.app/api/skipSegments?videoID=${videoId}&categories=${categories}`;
 
-    fetch(api)
-      .then(async r => {
-        try {
-          if (!r.ok) return [];
-          const ct = r.headers.get('content-type') || '';
-          if (ct.includes('application/json')) {
-            return await r.json();
-          }
-          // fallback text->json parse safe
-          const txt = await r.text();
-          try { return JSON.parse(txt); } catch { return []; }
-        } catch { return []; }
-      })
-      .then(list => {
-        const segments = Array.isArray(list)
-          ? list.filter(d => Array.isArray(d.segment)).map(d => d.segment).sort((a,b)=>a[0]-b[0])
-          : [];
+    let list = [];
+    try {
+      const res = await fetch(api, {cache:'no-cache'});
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-        this.sponsorSegments = segments;
-        this._sponsorCache.set(videoId, {segments, ts: Date.now()});
-        console.debug('Sponsor segments ready:', segments.length);
-      })
-      .catch(err => console.warn('SponsorBlock fetch error', err));
+      const ct = res.headers.get('content-type') || '';
+      if (ct.includes('application/json')) {
+        list = await res.json();
+      } else {
+        // Some instances mis-label; attempt manual parse but swallow errors
+        const txt = await res.text();
+        try { list = JSON.parse(txt); } catch { list = []; }
+      }
+    } catch (err) {
+      // Only log network-level issues to avoid noisy SyntaxError spam
+      if (!(err instanceof SyntaxError)) {
+        console.debug('SponsorBlock fetch error', err.message || err);
+      }
+      list = [];
+    }
+
+    const segments = Array.isArray(list)
+      ? list.filter(d => Array.isArray(d.segment)).map(d => d.segment).sort((a,b)=>a[0]-b[0])
+      : [];
+
+    this.sponsorSegments = segments;
+    this._sponsorCache.set(videoId, {segments, ts: Date.now()});
+    console.debug('Sponsor segments ready:', segments.length);
   }
 
   attachPlayerEvents(video) {
@@ -789,69 +792,47 @@ class YouTubeVancedPlugin {
   }
 
   /* ================= Format Extraction ================= */
-  getAvailableFormats(type){
+  async getAvailableFormatsAsync(type){
     try{
       if(!location.pathname.startsWith('/watch')){
         return {success:false,message:'Not a watch page'};
       }
 
       const player = this.getPlayerResponse();
-      if(!player || !player.streamingData) return {success:false};
+      let list = [];
+      if(player && player.streamingData){
+        const adaptive = player.streamingData.adaptiveFormats || [];
+        const fmts = player.streamingData.formats || [];
+        list = [...adaptive, ...fmts];
+      }
 
-      const adaptive = player.streamingData.adaptiveFormats || [];
-      const formats = player.streamingData.formats || [];
-      const list = [...adaptive, ...formats];
+      let filtered = this.filterAndDecipherFormats(list, type);
 
-      const filtered = [];
-
-      for(const f of list){
-        let directUrl = f.url;
-
-        // Handle signatureCipher/cipher fields
-        if(!directUrl && (f.signatureCipher || f.cipher)){
-          const sc = f.signatureCipher || f.cipher;
-          const params = new URLSearchParams(sc);
-          let urlFromCipher = params.get('url');
-          if(urlFromCipher){
-            // decipher sig if needed
-            if(params.get('s')){
-              if(this._decipherReady){
-                const sig = this.execTokens(params.get('s'), this._sigTokens);
-                const sp = params.get('sp') || 'signature';
-                urlFromCipher += `&${sp}=`+sig;
-              }else{
-                urlFromCipher=null; // skip, cannot decipher yet
-              }
-            }else if(params.get('sig')){
-              urlFromCipher += '&sig=' + params.get('sig');
-            }else if(params.get('signature')){
-              urlFromCipher += '&signature=' + params.get('signature');
+      // Fallback – use Piped API when no direct streams extracted or decipher not ready
+      if(filtered.length===0){
+        const vid = this.extractVideoId();
+        const api = `https://pipedapi.kavin.rocks/streams/${vid}`;
+        try{
+          const res = await fetch(api);
+          if(res.ok){
+            const json = await res.json();
+            if(type==='video' && Array.isArray(json.videoStreams)){
+              filtered = json.videoStreams.map(v=>({
+                url: v.url,
+                qualityLabel: v.quality,
+                container: v.mimeType?.split('/')[1]||'mp4',
+                bitrate: v.bitrate||0
+              }));
+            }else if(type==='audio' && Array.isArray(json.audioStreams)){
+              filtered = json.audioStreams.map(a=>({
+                url: a.url,
+                qualityLabel: a.quality,
+                container: a.mimeType?.split('/')[1]||'m4a',
+                bitrate: a.bitrate||0
+              }));
             }
-            directUrl = urlFromCipher;
           }
-        }
-
-        if(!directUrl) continue; // skip if no usable URL
-
-        // Decipher n parameter if exists
-        if(this._decipherReady && /[?&]n=/.test(directUrl)){
-          directUrl = directUrl.replace(/([?&]n=)([^&]+)/, (match,p1,p2)=> p1 + this.execTokens(p2,this._nTokens||this._sigTokens));
-        }
-
-        const mime = f.mimeType ? f.mimeType.split(';')[0] : '';
-
-        if(type==='video'){
-          if(!f.qualityLabel || !mime.startsWith('video/')) continue;
-        }else{
-          if(!mime.startsWith('audio/')) continue;
-        }
-
-        filtered.push({
-          url: directUrl,
-          qualityLabel: f.qualityLabel || `${Math.round((f.bitrate||0)/1000)}kbps`,
-          container: mime.split('/')[1] || 'mp4',
-          bitrate: f.bitrate || 0
-        });
+        }catch(e){ console.debug('Piped fallback failed', e); }
       }
 
       if(type==='video') {
@@ -863,6 +844,63 @@ class YouTubeVancedPlugin {
       console.warn('getAvailableFormats error', e);
       return {success:false};
     }
+  }
+
+  filterAndDecipherFormats(list, type){
+    const out=[];
+    for(const f of list){
+      let directUrl = f.url;
+
+      // Handle signatureCipher/cipher fields
+      if(!directUrl && (f.signatureCipher || f.cipher)){
+        const sc = f.signatureCipher || f.cipher;
+        const params = new URLSearchParams(sc);
+        let urlFromCipher = params.get('url');
+        if(urlFromCipher){
+          // decipher sig if needed
+          if(params.get('s')){
+            if(this._decipherReady){
+              const sig = this.execTokens(params.get('s'), this._sigTokens);
+              const sp = params.get('sp') || 'signature';
+              urlFromCipher += `&${sp}=`+sig;
+            }else{
+              urlFromCipher=null; // skip, cannot decipher yet
+            }
+          }else if(params.get('sig')){
+            urlFromCipher += '&sig=' + params.get('sig');
+          }else if(params.get('signature')){
+            urlFromCipher += '&signature=' + params.get('signature');
+          }
+          directUrl = urlFromCipher;
+        }
+      }
+
+      if(!directUrl) continue; // skip if no usable URL
+
+      // Decipher n parameter if exists
+      if(this._decipherReady && /[?&]n=/.test(directUrl)){
+        directUrl = directUrl.replace(/([?&]n=)([^&]+)/, (match,p1,p2)=> p1 + this.execTokens(p2,this._nTokens||this._sigTokens));
+      }
+
+      const mime = f.mimeType ? f.mimeType.split(';')[0] : '';
+
+      if(type==='video'){
+        if(!f.qualityLabel || !mime.startsWith('video/')) continue;
+      }else{
+        if(!mime.startsWith('audio/')) continue;
+      }
+
+      out.push({
+        url: directUrl,
+        qualityLabel: f.qualityLabel || `${Math.round((f.bitrate||0)/1000)}kbps`,
+        container: mime.split('/')[1] || 'mp4',
+        bitrate: f.bitrate || 0
+      });
+    }
+    return out.filter(item=>{
+      if(type==='video') return !!item.qualityLabel;
+      return true;
+    });
   }
 
   getPlayerResponse(){

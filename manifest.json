@@ -26,7 +26,8 @@
   "host_permissions": [
     "*://*.youtube.com/*",
     "https://sponsor.ajay.app/*",
-    "*://*.googlevideo.com/*"
+    "*://*.googlevideo.com/*",
+    "https://pipedapi.kavin.rocks/*"
   ],
   "web_accessible_resources": [
     {
