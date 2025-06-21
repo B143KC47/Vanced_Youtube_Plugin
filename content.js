@@ -46,6 +46,12 @@ class YouTubeVancedPlugin {
       'a[href*="/shorts/"]'
     ];
     
+    this._sigTokens = null;
+    this._nTokens   = null;
+    this._decipherReady = false;
+    // Kick-off token extraction in the background
+    this.initDecipher();
+    
     this.init();
   }
 
@@ -602,6 +608,9 @@ class YouTubeVancedPlugin {
             }
           }
         }
+
+        // NEW: attempt to skip in-stream video ads
+        this.skipVideoAds(video);
       });
 
       if (this.autoRepeatEnabled) {
@@ -613,6 +622,32 @@ class YouTubeVancedPlugin {
 
       video._vancedEnhancementsAttached = true;
     }
+  }
+
+  /* ================= Ad Skipping (in-stream) ================= */
+  skipVideoAds(video){
+    try{
+      const playerContainer = document.querySelector('.html5-video-player');
+      if(!playerContainer) return;
+      if(playerContainer.classList.contains('ad-showing') || playerContainer.querySelector('.ytp-ad-preview-text')){
+        // Try click the skip button if visible
+        const skipBtn = playerContainer.querySelector('.ytp-ad-skip-button, .ytp-ad-skip-button-modern');
+        if(skipBtn){
+          skipBtn.click();
+        }
+        // Fallback: jump to end of ad video
+        if(video.duration && video.currentTime < video.duration - 0.1){
+          video.currentTime = video.duration;
+        }
+        // If still playing ad, accelerate playback to finish quickly
+        if(video.playbackRate < 4){
+          video.playbackRate = 4;
+        }
+      }else if(video.playbackRate !== 1){
+        // Restore normal speed
+        video.playbackRate = 1;
+      }
+    }catch(_){}
   }
 
   /* ================= Layout Hiding ================= */
@@ -668,20 +703,32 @@ class YouTubeVancedPlugin {
         if(!directUrl && (f.signatureCipher || f.cipher)){
           const sc = f.signatureCipher || f.cipher;
           const params = new URLSearchParams(sc);
-          const urlFromCipher = params.get('url');
+          let urlFromCipher = params.get('url');
           if(urlFromCipher){
-            if(params.get('sig')){
-              directUrl = urlFromCipher + '&sig=' + params.get('sig');
+            // decipher sig if needed
+            if(params.get('s')){
+              if(this._decipherReady){
+                const sig = this.execTokens(params.get('s'), this._sigTokens);
+                const sp = params.get('sp') || 'signature';
+                urlFromCipher += `&${sp}=`+sig;
+              }else{
+                urlFromCipher=null; // skip, cannot decipher yet
+              }
+            }else if(params.get('sig')){
+              urlFromCipher += '&sig=' + params.get('sig');
             }else if(params.get('signature')){
-              directUrl = urlFromCipher + '&signature=' + params.get('signature');
-            }else{
-              // Encrypted signature ("s") not supported without deciphering
-              directUrl = null;
+              urlFromCipher += '&signature=' + params.get('signature');
             }
+            directUrl = urlFromCipher;
           }
         }
 
         if(!directUrl) continue; // skip if no usable URL
+
+        // Decipher n parameter if exists
+        if(this._decipherReady && /[?&]n=/.test(directUrl)){
+          directUrl = directUrl.replace(/([?&]n=)([^&]+)/, (match,p1,p2)=> p1 + this.execTokens(p2,this._nTokens||this._sigTokens));
+        }
 
         const mime = f.mimeType ? f.mimeType.split(';')[0] : '';
 
@@ -740,6 +787,87 @@ class YouTubeVancedPlugin {
       }
     }
     return null;
+  }
+
+  /* =====================  Signature decipher  ===================== */
+  async initDecipher(){
+    try{
+      // try to locate base.js url from page
+      const baseScript = document.querySelector('script[src*="base.js"]');
+      if(!baseScript) return;
+      const jsUrl = baseScript.src.startsWith('https:')? baseScript.src : 'https://www.youtube.com'+baseScript.getAttribute('src');
+      const txt = await (await fetch(jsUrl)).text();
+      const {sigTokens,nTokens} = this.extractTokens(txt);
+      if(sigTokens && sigTokens.length){
+        this._sigTokens = sigTokens;
+        this._nTokens   = nTokens;
+        this._decipherReady = true;
+        console.debug('Decipher tokens ready');
+      }
+    }catch(e){
+      console.debug('initDecipher error',e);
+    }
+  }
+
+  extractTokens(js){
+    const objReg = /([\w$]{2})=\{((?:[\w$]{2}:function\(.*?\}.,?)+)\};/s;
+    const fnReg  = /([\w$]{2})=function\(a\)\{a=a\.split\(""\);(.*?)return a\.join\(""\)\}/s;
+    const objRes = js.match(objReg);
+    const fnRes  = js.match(fnReg);
+    if(!objRes||!fnRes) return {sigTokens:null,nTokens:null};
+    const objName = objRes[1];
+    const objBody = objRes[2];
+    const fnBody  = fnRes[2];
+    // Map operation key -> op type
+    const ops = {};
+    objBody.split('},').forEach(part=>{
+      const m = part.match(/([\w$]{2}):function\(a,(b)?c?\){(.*?)}/s);
+      if(!m) return;
+      const name=m[1];
+      const body=m[3];
+      if(/\.reverse\(\)/.test(body)) ops[name]='reverse';
+      else if(/\.splice/.test(body)) ops[name]='splice';
+      else if(/var c=a\[0\];a\[0\]=a\[b%a\.length\];a\[b%a\.length\]=c/.test(body)) ops[name]='swap';
+    });
+    // build tokens
+    const tokenReg = new RegExp(objName+"\.([\w$]{2})\\(a,(\d+)\)","g");
+    const tokens=[];
+    let m;
+    while((m=tokenReg.exec(fnBody))!==null){
+      tokens.push({type:ops[m[1]],arg:parseInt(m[2])});
+    }
+    // Attempt to grab n-transform as well
+    let nTokens=null;
+    const nFnMatch = js.match(/function\(a\)\{a=a\.split\(""\);(.*?)return a\.join/);
+    if(nFnMatch){
+      nTokens=this.parseSimpleTokens(nFnMatch[1]);
+    }
+    return {sigTokens:tokens,nTokens};
+  }
+
+  parseSimpleTokens(body){
+    const tokens=[];
+    body.split(';').forEach(part=>{
+      if(/\.reverse\(\)/.test(part)) tokens.push({type:'reverse'});
+      else if(/\.splice\(0,(\d+)\)/.test(part)) tokens.push({type:'splice',arg:parseInt(RegExp.$1)});
+      else if(/var c=a\[0\];a\[0\]=a\[(\d+)%a\.length\];a\[\1%a\.length\]=c/.test(part)) tokens.push({type:'swap',arg:parseInt(RegExp.$1)});
+    });
+    return tokens;
+  }
+
+  execTokens(sig,tokens){
+    if(!tokens) return sig;
+    let a=sig.split('');
+    for(const t of tokens){
+      switch(t.type){
+        case 'reverse': a.reverse(); break;
+        case 'splice': a.splice(0,t.arg); break;
+        case 'swap':
+          const idx=t.arg%a.length;
+          const c=a[0];a[0]=a[idx];a[idx]=c;break;
+      }
+    }
+    return a.join('');
   }
 }
 

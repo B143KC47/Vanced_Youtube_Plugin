@@ -13,16 +13,17 @@
 
     body {
       width: 360px;
-      min-height: 480px;
+      height: 580px;
+      max-height: 600px;
       font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
       background: #0d1117;
       color: #ffffff;
-      overflow: hidden;
+      overflow-y: auto;
     }
 
     .header {
       background: #161b22;
-      padding: 20px;
+      padding: 16px;
       text-align: center;
       border-bottom: 1px solid #30363d;
     }
@@ -32,7 +33,7 @@
       height: 48px;
       background: #ffffff;
       border-radius: 12px;
-      margin: 0 auto 12px;
+      margin: 0 auto 8px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -44,7 +45,7 @@
     .title {
       font-size: 18px;
       font-weight: 600;
-      margin-bottom: 4px;
+      margin-bottom: 2px;
       color: #ffffff;
     }
 
@@ -55,7 +56,9 @@
     }
 
     .content {
-      padding: 16px;
+      padding: 16px 16px 8px 16px;
+      max-height: calc(580px - 120px - 40px);
+      overflow-y: auto;
     }
 
     .control-group {
@@ -63,7 +66,7 @@
       border: 1px solid #30363d;
       border-radius: 8px;
       padding: 16px;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       transition: border-color 0.2s ease;
     }
 
@@ -75,38 +78,27 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
     }
 
     .control-info {
       display: flex;
       align-items: center;
-      gap: 12px;
-    }
-
-    .control-icon {
-      width: 32px;
-      height: 32px;
-      background: #21262d;
-      border: 1px solid #30363d;
-      border-radius: 6px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 16px;
-      color: #ffffff;
+      flex: 1;
     }
 
     .control-text h3 {
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 600;
       color: #ffffff;
-      margin-bottom: 2px;
+      margin-bottom: 4px;
+      letter-spacing: -0.01em;
     }
 
     .control-text p {
-      font-size: 12px;
+      font-size: 13px;
       color: #8b949e;
+      line-height: 1.4;
     }
 
     .toggle-switch {
@@ -164,8 +156,11 @@
       background: #21262d;
       border: 1px solid #30363d;
       border-radius: 6px;
-      font-size: 12px;
+      font-size: 11px;
       color: #e6e6e6;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
     }
 
     .status-dot {
@@ -184,52 +179,38 @@
       border: 1px solid #30363d;
       border-radius: 8px;
       padding: 16px;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
 
     .stats-header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
       margin-bottom: 12px;
     }
 
-    .stats-icon {
-      width: 32px;
-      height: 32px;
-      background: #21262d;
-      border: 1px solid #30363d;
-      border-radius: 6px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 16px;
-      color: #ffffff;
-    }
-
     .stats-text h3 {
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 600;
       color: #ffffff;
-      margin-bottom: 2px;
+      margin-bottom: 4px;
+      letter-spacing: -0.01em;
     }
 
     .stats-text p {
-      font-size: 12px;
+      font-size: 13px;
       color: #8b949e;
+      line-height: 1.4;
     }
 
     .stats-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 12px;
+      gap: 10px;
     }
 
     .stat-item {
       background: #21262d;
       border: 1px solid #30363d;
       border-radius: 6px;
-      padding: 12px;
+      padding: 10px;
       text-align: center;
     }
 
@@ -250,46 +231,63 @@
     .action-buttons {
       display: flex;
       gap: 8px;
-      margin-top: 16px;
+      margin-top: 12px;
     }
 
     .btn {
       flex: 1;
-      padding: 10px 16px;
+      padding: 12px 18px;
       border: 1px solid #30363d;
       border-radius: 6px;
-      font-size: 13px;
-      font-weight: 500;
+      font-size: 12px;
+      font-weight: 600;
       cursor: pointer;
       transition: all 0.2s ease;
       background: #21262d;
       color: #e6e6e6;
       text-align: center;
+      letter-spacing: 0.025em;
+      text-transform: uppercase;
+      position: relative;
+      overflow: hidden;
     }
 
     .btn:hover {
       background: #30363d;
       border-color: #484f58;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
     .btn-primary {
       background: #ffffff;
       color: #0d1117;
       border-color: #ffffff;
+      font-weight: 700;
     }
 
     .btn-primary:hover {
       background: #e6e6e6;
       border-color: #e6e6e6;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(255, 255, 255, 0.2);
     }
 
     .footer {
       text-align: center;
-      padding: 12px 16px;
+      padding: 8px 16px;
       font-size: 11px;
       color: #6e7681;
       border-top: 1px solid #30363d;
       background: #0d1117;
+      position: sticky;
+      bottom: 0;
+      z-index: 10;
     }
 
     .animation-enter {
@@ -323,16 +321,18 @@
     }
 
     ::-webkit-scrollbar {
-      width: 6px;
+      width: 4px;
     }
 
     ::-webkit-scrollbar-track {
       background: #0d1117;
+      border-radius: 2px;
     }
 
     ::-webkit-scrollbar-thumb {
       background: #30363d;
-      border-radius: 3px;
+      border-radius: 2px;
+      border: 1px solid #21262d;
     }
 
     ::-webkit-scrollbar-thumb:hover {
@@ -342,19 +342,24 @@
     .tabs {
       display: flex;
       gap: 8px;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
     }
 
     .tab-btn {
-      padding: 10px 16px;
+      padding: 6px 12px;
       border: 1px solid #30363d;
       border-radius: 6px;
-      font-size: 13px;
+      font-size: 11px;
       font-weight: 500;
       cursor: pointer;
       transition: all 0.2s ease;
       background: #21262d;
       color: #e6e6e6;
+      letter-spacing: 0.01em;
+      text-transform: uppercase;
+      flex: 1;
+      min-width: 60px;
     }
 
     .tab-btn.active {
@@ -368,6 +373,49 @@
 
     .tab-content.active {
       display: block;
+    }
+
+    /* Visual indicators using CSS */
+    .control-text h3::before {
+      content: '';
+      display: inline-block;
+      width: 4px;
+      height: 4px;
+      background: #ffffff;
+      border-radius: 50%;
+      margin-right: 8px;
+      opacity: 0.6;
+    }
+
+    .stats-text h3::before {
+      content: '';
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      background: linear-gradient(135deg, #ffffff, #8b949e);
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+
+    /* Category-specific indicators */
+    #tab-general .control-text h3::before {
+      background: #ffffff;
+    }
+
+    #tab-video .control-text h3::before {
+      background: #7c3aed;
+    }
+
+    #tab-ads .control-text h3::before {
+      background: #dc2626;
+    }
+
+    #tab-layout .control-text h3::before {
+      background: #059669;
+    }
+
+    #tab-download .control-text h3::before {
+      background: #2563eb;
     }
   </style>
 </head>
@@ -394,7 +442,6 @@
       <div class="control-group animation-enter">
         <div class="control-header">
           <div class="control-info">
-            <div class="control-icon">📱</div>
             <div class="control-text">
               <h3>YouTube Shorts</h3>
               <p>Block short-form videos</p>
@@ -415,7 +462,6 @@
       <div class="control-group animation-enter">
         <div class="control-header">
           <div class="control-info">
-            <div class="control-icon">🛡️</div>
             <div class="control-text">
               <h3>Content Filter</h3>
               <p>Enhanced blocking system</p>
@@ -435,7 +481,6 @@
       <!-- Statistics -->
       <div class="stats-section animation-enter">
         <div class="stats-header">
-          <div class="stats-icon">📊</div>
           <div class="stats-text">
             <h3>Statistics</h3>
             <p>Blocking performance</p>
@@ -455,8 +500,8 @@
 
       <!-- Action Buttons -->
       <div class="action-buttons">
-        <button class="btn" id="refreshBtn">🔄 Refresh</button>
-        <button class="btn btn-primary" id="settingsBtn">⚙️ Settings</button>
+        <button class="btn" id="refreshBtn">Refresh</button>
+        <button class="btn btn-primary" id="settingsBtn">Settings</button>
       </div>
     </div>
 
@@ -466,7 +511,6 @@
       <div class="control-group animation-enter">
         <div class="control-header">
           <div class="control-info">
-            <div class="control-icon">⏩</div>
             <div class="control-text">
               <h3>SponsorBlock</h3>
               <p>Skip sponsored segments</p>
@@ -487,7 +531,6 @@
       <div class="control-group animation-enter">
         <div class="control-header">
           <div class="control-info">
-            <div class="control-icon">🔁</div>
             <div class="control-text">
               <h3>Auto Repeat</h3>
               <p>Loop video when ended</p>
@@ -511,7 +554,6 @@
       <div class="control-group animation-enter">
         <div class="control-header">
           <div class="control-info">
-            <div class="control-icon">🚫</div>
             <div class="control-text">
               <h3>Ad Blocker</h3>
               <p>Hide YouTube layout ads</p>
@@ -535,7 +577,6 @@
       <div class="control-group animation-enter">
         <div class="control-header">
           <div class="control-info">
-            <div class="control-icon">🏁</div>
             <div class="control-text">
               <h3>End Screens</h3>
               <p>Hide video end screen cards</p>
@@ -556,7 +597,6 @@
       <div class="control-group animation-enter">
         <div class="control-header">
           <div class="control-info">
-            <div class="control-icon">ℹ️</div>
             <div class="control-text">
               <h3>Info Cards</h3>
               <p>Hide info cards during playback</p>
@@ -577,7 +617,6 @@
       <div class="control-group animation-enter">
         <div class="control-header">
           <div class="control-info">
-            <div class="control-icon">💧</div>
             <div class="control-text">
               <h3>Video Watermark</h3>
               <p>Hide channel watermark</p>
@@ -598,7 +637,6 @@
       <div class="control-group animation-enter">
         <div class="control-header">
           <div class="control-info">
-            <div class="control-icon">📖</div>
             <div class="control-text">
               <h3>YouTube Stories</h3>
               <p>Remove stories section</p>
@@ -621,7 +659,6 @@
       <div class="control-group animation-enter">
         <div class="control-header">
           <div class="control-info">
-            <div class="control-icon">⬇️</div>
             <div class="control-text">
               <h3>Video Quality</h3>
               <p>Select stream to download</p>
@@ -630,8 +667,8 @@
           <select id="qualitySelect" style="padding:6px 8px;background:#21262d;border:1px solid #30363d;border-radius:6px;color:#e6e6e6;font-size:13px;"></select>
         </div>
         <div class="action-buttons" style="margin-top:8px;">
-          <button class="btn btn-primary" id="downloadVideoBtn">⬇️ Video</button>
-          <button class="btn" id="downloadAudioBtn">🎵 Audio</button>
+          <button class="btn btn-primary" id="downloadVideoBtn">Download Video</button>
+          <button class="btn" id="downloadAudioBtn">Download Audio</button>
         </div>
         <p style="margin-top:8px;font-size:11px;color:#6e7681;">⚠️ For personal use only</p>
       </div>

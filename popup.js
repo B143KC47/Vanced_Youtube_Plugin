@@ -581,9 +581,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  function refreshQualityList(){
+  function refreshQualityList(retry=0){
     if(!elements.qualitySelect) return;
-    elements.qualitySelect.innerHTML = '<option>Loading...</option>';
+    if(retry===0){
+      elements.qualitySelect.innerHTML = '<option>Loading...</option>';
+    }
     chrome.tabs.query({active:true, currentWindow:true}, (tabs)=>{
       if(!tabs[0]) return;
       chrome.tabs.sendMessage(tabs[0].id, {action:'getVideoFormats'}, (response)=>{
@@ -596,9 +598,13 @@ document.addEventListener('DOMContentLoaded', function() {
             elements.qualitySelect.appendChild(opt);
           });
         }else{
-          const opt=document.createElement('option');
-          opt.textContent='No video streams';
-          elements.qualitySelect.appendChild(opt);
+          if(retry<4){ // retry up to 4 times (~5s)
+            setTimeout(()=>refreshQualityList(retry+1), 1200);
+          }else{
+            const opt=document.createElement('option');
+            opt.textContent='No video streams';
+            elements.qualitySelect.appendChild(opt);
+          }
         }
       });
     });
