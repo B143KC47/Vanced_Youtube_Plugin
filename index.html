@@ -1,117 +1,507 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>YouTube Vanced Plugin for Chrome</title>
+  <meta name="description" content="Enhanced YouTube experience - block Shorts, ads, skip sponsors and more. 油管增强插件：短视频&广告终结者">
+  
+  <!-- Open Graph Meta Tags -->
+  <meta property="og:title" content="YouTube Vanced Plugin for Chrome">
+  <meta property="og:description" content="Enhanced YouTube experience with advanced Shorts control, modern UI, and smart content filtering">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="https://raw.githubusercontent.com/USERNAME/REPO/main/icon.svg">
+  
   <style>
-    /* Simple dark theme styles */
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    /* Modern Dark Theme Styles */
+    :root {
+      --bg-primary: #0d1117;
+      --bg-secondary: #161b22;
+      --bg-tertiary: #21262d;
+      --border-color: #30363d;
+      --border-hover: #484f58;
+      --text-primary: #e6edf3;
+      --text-secondary: #8b949e;
+      --text-accent: #58a6ff;
+      --accent-green: #238636;
+      --accent-green-hover: #2ea043;
+      --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      --shadow-glow: 0 0 20px rgba(102, 126, 234, 0.3);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
     body {
-      font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
-      background: #0d1117;
-      color: #e6edf3;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
       line-height: 1.6;
-      padding: 0 16px 48px;
+      overflow-x: hidden;
     }
-    header {
-      text-align: center;
-      padding: 40px 0 32px;
-    }
-    header svg {
-      width: 64px;
-      height: 64px;
-    }
-    h1 {
-      font-size: 32px;
-      margin: 16px 0 8px;
-    }
-    h1 span.cn { display: block; font-size: 20px; font-weight: 400; color: #8b949e; }
-    p.lead { color: #8b949e; max-width: 640px; margin: 0 auto 24px; }
 
-    section { max-width: 900px; margin: 0 auto 48px; }
-    h2 { font-size: 24px; margin-bottom: 12px; color: #ffffff; }
-    ul.feature-list {
-      list-style: none;
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 12px;
-    }
-    ul.feature-list li {
-      background: #161b22;
-      border: 1px solid #30363d;
-      border-radius: 8px;
-      padding: 16px;
+    /* Hero Section */
+    .hero {
+      min-height: 100vh;
       display: flex;
-      align-items: flex-start;
-      gap: 12px;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2rem;
+      background: radial-gradient(ellipse at center, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
+      position: relative;
     }
-    ul.feature-list li span.icon { font-size: 20px; }
-    ul.feature-list li .txt {
-      flex: 1;
-    }
-    ul.feature-list li .txt b { color: #fff; }
-    a.btn {
-      display: inline-block;
-      background: #238636;
-      color: #fff;
-      padding: 12px 20px;
-      border-radius: 6px;
-      margin-top: 8px;
-      text-decoration: none;
-      font-weight: 600;
-      transition: background 0.25s;
-    }
-    a.btn:hover { background: #2ea043; }
 
-    footer { text-align: center; color: #6e7681; font-size: 14px; }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60"><circle cx="30" cy="30" r="1" fill="%23ffffff" opacity="0.1"/></svg>') repeat;
+      pointer-events: none;
+    }
+
+    .hero-content {
+      max-width: 800px;
+      z-index: 1;
+      position: relative;
+    }
+
+    .logo-container {
+      margin-bottom: 2rem;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    .logo {
+      width: 120px;
+      height: 120px;
+      margin: 0 auto;
+      background: var(--gradient-primary);
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      box-shadow: var(--shadow-glow);
+    }
+
+    .hero h1 {
+      font-size: clamp(2.5rem, 5vw, 4rem);
+      font-weight: 700;
+      margin-bottom: 1rem;
+      background: var(--gradient-primary);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero .subtitle {
+      font-size: clamp(1rem, 2.5vw, 1.5rem);
+      color: var(--text-secondary);
+      margin-bottom: 1rem;
+      font-weight: 300;
+    }
+
+    .hero .description {
+      font-size: clamp(0.9rem, 2vw, 1.1rem);
+      color: var(--text-secondary);
+      margin-bottom: 3rem;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* Buttons */
+    .btn-group {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 3rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 1rem 2rem;
+      border: none;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-primary {
+      background: var(--accent-green);
+      color: white;
+      box-shadow: 0 4px 12px rgba(35, 134, 54, 0.3);
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-green-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(35, 134, 54, 0.4);
+    }
+
+    .btn-secondary {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-tertiary);
+      border-color: var(--border-hover);
+      transform: translateY(-2px);
+    }
+
+    /* Features Section */
+    .features {
+      padding: 5rem 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .section-title {
+      text-align: center;
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .section-subtitle {
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: 1.2rem;
+      margin-bottom: 4rem;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+      margin-bottom: 4rem;
+    }
+
+    .feature-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 2rem;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--gradient-primary);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--border-hover);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    .feature-card:hover::before {
+      opacity: 1;
+    }
+
+    .feature-icon {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      display: block;
+    }
+
+    .feature-title {
+      font-size: 1.3rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: var(--text-primary);
+    }
+
+    .feature-desc {
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    /* Quick Start Section */
+    .quick-start {
+      background: var(--bg-secondary);
+      padding: 5rem 2rem;
+      text-align: center;
+    }
+
+    .steps-container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 2rem;
+      margin-top: 3rem;
+    }
+
+    .step {
+      position: relative;
+      padding: 1.5rem;
+      background: var(--bg-tertiary);
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+    }
+
+    .step-number {
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 24px;
+      height: 24px;
+      background: var(--gradient-primary);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .step-title {
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      margin-top: 0.5rem;
+    }
+
+    .step-desc {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    /* Footer */
+    .footer {
+      padding: 3rem 2rem;
+      text-align: center;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .footer-link {
+      color: var(--text-accent);
+      text-decoration: none;
+      transition: color 0.3s ease;
+    }
+
+    .footer-link:hover {
+      color: var(--text-primary);
+    }
+
+    .footer-text {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    /* Animations */
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .hero {
+        padding: 1rem;
+        min-height: 90vh;
+      }
+
+      .btn-group {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .btn {
+        width: 100%;
+        max-width: 280px;
+      }
+
+      .features {
+        padding: 3rem 1rem;
+      }
+
+      .quick-start {
+        padding: 3rem 1rem;
+      }
+
+      .steps {
+        grid-template-columns: 1fr;
+      }
+
+      .footer-links {
+        flex-direction: column;
+        gap: 1rem;
+      }
+    }
+
+    /* Accessibility */
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    /* Focus states */
+    .btn:focus,
+    .footer-link:focus {
+      outline: 2px solid var(--text-accent);
+      outline-offset: 2px;
+    }
   </style>
 </head>
+
 <body>
-  <header>
-    <!-- Re-use existing SVG icon -->
-    <svg width="64" height="64" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="24" cy="24" r="24" fill="#667eea" />
-      <text x="24" y="32" text-anchor="middle" fill="white" font-size="24" font-family="sans-serif">🎯</text>
-    </svg>
-    <h1>YouTube Vanced Plugin <span class="cn">油管增强插件</span></h1>
-    <p class="lead">Enhanced YouTube experience for Chrome — block Shorts, ads, skip sponsors and more.<br />
-      为 Chrome 打造的 YouTube 增强体验：短视频&广告终结者、赞助片段跳过等。</p>
-    <a class="btn" href="https://github.com/USERNAME/REPO/archive/refs/heads/main.zip" target="_blank">📦 Download ZIP 下载</a>
-  </header>
-
-  <section>
-    <h2>Features · 功能亮点</h2>
-    <ul class="feature-list">
-      <li><span class="icon">🚫</span><div class="txt"><b>Shorts Blocker</b><br />短视频屏蔽 &amp; 自动跳转</div></li>
-      <li><span class="icon">🛡️</span><div class="txt"><b>Ad Cleaner</b><br />版面广告清除 &amp; 自动收缩空隙</div></li>
-      <li><span class="icon">⏩</span><div class="txt"><b>SponsorBlock</b><br />赞助片段自动跳过</div></li>
-      <li><span class="icon">🔁</span><div class="txt"><b>Auto Repeat</b><br />视频结束自动循环播放</div></li>
-      <li><span class="icon">⬇️</span><div class="txt"><b>Downloader</b><br />一键下载 视频 / 音频</div></li>
-      <li><span class="icon">🌙</span><div class="txt"><b>Modern UI</b><br />多标签卡暗黑界面</div></li>
-    </ul>
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-content">
+      <div class="logo-container">
+        <div class="logo">🎯</div>
+      </div>
+      
+      <h1>YouTube Vanced Plugin</h1>
+      <p class="subtitle">油管增强插件</p>
+      <p class="description">
+        Enhanced YouTube experience for Chrome — block Shorts, ads, skip sponsors and more.<br>
+        为 Chrome 打造的 YouTube 增强体验：短视频&广告终结者、赞助片段跳过等。
+      </p>
+      
+      <div class="btn-group">
+        <a href="https://github.com/USERNAME/REPO/archive/refs/heads/main.zip" class="btn btn-primary" target="_blank">
+          📦 Download Extension<br><small>下载扩展</small>
+        </a>
+        <a href="https://github.com/USERNAME/REPO" class="btn btn-secondary" target="_blank">
+          📋 View Source<br><small>查看源码</small>
+        </a>
+      </div>
+    </div>
   </section>
 
-  <section>
-    <h2>Quick Start · 快速开始</h2>
-    <ol style="margin-left: 18px;">
-      <li>Download the <b>ZIP</b> above and extract it / 下载上方 <b>ZIP</b> 并解压。</li>
-      <li>Open <code>chrome://extensions/</code>, enable <b>Developer mode</b> / 打开扩展开发者模式。</li>
-      <li>Click <b>Load unpacked</b> & choose the folder / 选择解压后的文件夹。</li>
-      <li>Pin 🎯 icon & enjoy! / 固定 📌 图标，开始享受！</li>
-    </ol>
+  <!-- Features Section -->
+  <section class="features">
+    <h2 class="section-title">Features · 功能亮点</h2>
+    <p class="section-subtitle">Comprehensive YouTube enhancement suite</p>
+    
+    <div class="features-grid">
+      <div class="feature-card">
+        <span class="feature-icon">🚫</span>
+        <h3 class="feature-title">Shorts Blocker</h3>
+        <p class="feature-desc">短视频屏蔽 & 自动跳转<br>Hide & redirect every Shorts element across YouTube</p>
+      </div>
+      
+      <div class="feature-card">
+        <span class="feature-icon">🛡️</span>
+        <h3 class="feature-title">Ad Cleaner</h3>
+        <p class="feature-desc">版面广告清除 & 自动收缩空隙<br>Remove layout ads & collapse gaps for seamless browsing</p>
+      </div>
+      
+      <div class="feature-card">
+        <span class="feature-icon">⏩</span>
+        <h3 class="feature-title">SponsorBlock</h3>
+        <p class="feature-desc">赞助片段自动跳过<br>Auto-skip sponsored segments via SponsorBlock API</p>
+      </div>
+      
+      <div class="feature-card">
+        <span class="feature-icon">🔁</span>
+        <h3 class="feature-title">Auto Repeat</h3>
+        <p class="feature-desc">视频结束自动循环播放<br>Automatically loop the current video on finish</p>
+      </div>
+      
+      <div class="feature-card">
+        <span class="feature-icon">⬇️</span>
+        <h3 class="feature-title">Downloader</h3>
+        <p class="feature-desc">一键下载 视频 / 音频<br>One-click download of any resolution or pure audio</p>
+      </div>
+      
+      <div class="feature-card">
+        <span class="feature-icon">🌙</span>
+        <h3 class="feature-title">Modern UI</h3>
+        <p class="feature-desc">多标签卡暗黑界面<br>Responsive tabbed popup with smooth animations</p>
+      </div>
+    </div>
   </section>
 
-  <section>
-    <h2>Links · 相关链接</h2>
-    <p>
-      <a href="https://github.com/USERNAME/REPO" style="color:#58a6ff;">Source Code 源码仓库</a> ·
-      <a href="https://github.com/USERNAME/REPO/issues" style="color:#58a6ff;">Issues 问题反馈</a>
+  <!-- Quick Start Section -->
+  <section class="quick-start">
+    <div class="steps-container">
+      <h2 class="section-title">Quick Start · 快速开始</h2>
+      <p class="section-subtitle">Get started in just 4 simple steps</p>
+      
+      <div class="steps">
+        <div class="step">
+          <div class="step-number">1</div>
+          <h3 class="step-title">Download</h3>
+          <p class="step-desc">下载上方 ZIP 并解压<br>Download the ZIP above and extract it</p>
+        </div>
+        
+        <div class="step">
+          <div class="step-number">2</div>
+          <h3 class="step-title">Developer Mode</h3>
+          <p class="step-desc">打开扩展开发者模式<br>Open chrome://extensions/ & enable Developer mode</p>
+        </div>
+        
+        <div class="step">
+          <div class="step-number">3</div>
+          <h3 class="step-title">Load Extension</h3>
+          <p class="step-desc">选择解压后的文件夹<br>Click "Load unpacked" & choose the folder</p>
+        </div>
+        
+        <div class="step">
+          <div class="step-number">4</div>
+          <h3 class="step-title">Enjoy!</h3>
+          <p class="step-desc">固定 📌 图标，开始享受！<br>Pin 🎯 icon & enjoy enhanced YouTube!</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-links">
+      <a href="https://github.com/USERNAME/REPO" class="footer-link">Source Code 源码仓库</a>
+      <a href="https://github.com/USERNAME/REPO/issues" class="footer-link">Issues 问题反馈</a>
+      <a href="https://github.com/USERNAME/REPO/releases" class="footer-link">Releases 版本发布</a>
+    </div>
+    <p class="footer-text">
+      v2.0 — MIT License · 2025<br>
+      Enhanced YouTube experience for everyone
     </p>
-  </section>
-
-  <footer>
-    v2.0 — MIT License · 2025
   </footer>
 </body>
 </html> 
