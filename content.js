@@ -542,21 +542,32 @@ class YouTubeVancedPlugin {
 
     adSelectors.forEach(sel => {
       document.querySelectorAll(sel + ':not([data-vanced-blocked])').forEach(el => {
-        // Attempt to climb up to the feed/grid item that actually contributes height.
-        const container =
-          el.closest('ytd-rich-item-renderer, ytd-rich-section-renderer, ytd-ad-slot-renderer, ytd-carousel-ad-renderer, ytd-search-pyv-renderer, ytd-in-feed-ad-layout-renderer') ||
-          el;
+        // Always try to remove the OUTERMOST rich-grid item first to avoid blank gaps
+        let container = el.closest('ytd-rich-item-renderer, ytd-rich-section-renderer');
 
-        if (!this.blockedElements.has(container)) {
+        // If not inside a rich grid item, fall back to direct ad containers
+        if (!container) {
+          container = el.closest('ytd-ad-slot-renderer, ytd-carousel-ad-renderer, ytd-search-pyv-renderer, ytd-in-feed-ad-layout-renderer') || el;
+        }
+
+        if (container && !this.blockedElements.has(container)) {
           containers.add(container);
         }
       });
     });
 
+    // Secondary pass: collapse any rich-item that now only contains blocked ad children
+    document.querySelectorAll('ytd-rich-item-renderer:not([data-vanced-blocked])').forEach(item => {
+      const adChild = item.querySelector('ytd-ad-slot-renderer[data-vanced-blocked], ytd-in-feed-ad-layout-renderer[data-vanced-blocked], ytd-carousel-ad-renderer[data-vanced-blocked], ytd-search-pyv-renderer[data-vanced-blocked]');
+      if (adChild && !this.blockedElements.has(item)) {
+        containers.add(item);
+      }
+    });
+
     if (containers.size > 0) {
       const blocked = this.hideElementsBatch(Array.from(containers));
       if (blocked > 0) {
-        console.debug('Ad containers blocked:', blocked);
+        console.debug('Ad containers blocked (with outer wrappers):', blocked);
       }
     }
   }
