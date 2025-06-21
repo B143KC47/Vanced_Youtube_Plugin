@@ -23,7 +23,8 @@
     "service_worker": "background.js"
   },
   "host_permissions": [
-    "*://*.youtube.com/*"
+    "*://*.youtube.com/*",
+    "https://sponsor.ajay.app/*"
   ],
   "web_accessible_resources": [
     {

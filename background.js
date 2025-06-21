@@ -11,6 +11,9 @@ chrome.runtime.onInstalled.addListener((details) => {
     const defaultSettings = {
       shortsBlockerEnabled: true,
       shortsOnlyMode: true,
+      sponsorBlockEnabled: true,
+      adBlockerEnabled: true,
+      autoRepeatEnabled: false,
       blockedShortsCount: 0,
       sessionCount: 1,
       lastCleanup: Date.now()
@@ -81,7 +84,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   tabStates.set(tabId, now);
   
   // 异步检查设置，避免阻塞
-  chrome.storage.sync.get(['shortsBlockerEnabled', 'shortsOnlyMode'], (result) => {
+  chrome.storage.sync.get(['shortsBlockerEnabled', 'shortsOnlyMode', 'sponsorBlockEnabled', 'autoRepeatEnabled', 'adBlockerEnabled'], (result) => {
     if (chrome.runtime.lastError) {
       console.warn('Storage error:', chrome.runtime.lastError);
       return;

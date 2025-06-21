@@ -4,6 +4,9 @@ class YouTubeVancedPlugin {
   constructor() {
     this.isGeneralEnabled = true;
     this.isShortsEnabled = true;
+    this.sponsorBlockEnabled = false;
+    this.autoRepeatEnabled = false;
+    this.adBlockerEnabled = false;
     this.blockedCount = 0;
     
     // 性能优化：缓存和状态管理
@@ -11,6 +14,13 @@ class YouTubeVancedPlugin {
     this.blockedElements = new WeakSet(); // 使用WeakSet避免内存泄漏
     this.isBlocking = false;
     this.blockQueue = new Set();
+    
+    // SponsorBlock
+    this.sponsorSegments = [];
+    this.currentVideoId = null;
+    this.lastFetchTime = 0;
+    
+    this.playerCheckInterval = null;
     
     // 缓存编译后的选择器（按优先级排序）
     this.primarySelectors = [
@@ -40,6 +50,9 @@ class YouTubeVancedPlugin {
     chrome.storage.sync.get([
       'shortsBlockerEnabled', 
       'shortsOnlyMode',
+      'sponsorBlockEnabled',
+      'autoRepeatEnabled',
+      'adBlockerEnabled',
       'blockedShortsCount'
     ], (result) => {
       if (!result || typeof result !== 'object') {
@@ -49,11 +62,18 @@ class YouTubeVancedPlugin {
 
       this.isGeneralEnabled = result.shortsBlockerEnabled !== false;
       this.isShortsEnabled = result.shortsOnlyMode !== false;
+      this.sponsorBlockEnabled = result.sponsorBlockEnabled !== false;
+      this.autoRepeatEnabled = result.autoRepeatEnabled !== false;
+      this.adBlockerEnabled = result.adBlockerEnabled !== false;
       this.blockedCount = result.blockedShortsCount || 0;
       
       if (this.isGeneralEnabled || this.isShortsEnabled) {
         this.blockContentOptimized();
         this.observeChangesOptimized();
+      }
+
+      if (this.sponsorBlockEnabled || this.autoRepeatEnabled) {
+        this.setupVideoPlayerInterval();
       }
     });
 
@@ -101,11 +121,18 @@ class YouTubeVancedPlugin {
             if (message.settings && typeof message.settings === 'object') {
               this.isGeneralEnabled = message.settings.shortsBlockerEnabled !== false;
               this.isShortsEnabled = message.settings.shortsOnlyMode !== false;
+              this.sponsorBlockEnabled = message.settings.sponsorBlockEnabled !== false;
+              this.autoRepeatEnabled = message.settings.autoRepeatEnabled !== false;
+              this.adBlockerEnabled = message.settings.adBlockerEnabled !== false;
               
               if (this.isGeneralEnabled || this.isShortsEnabled) {
                 this.blockContentOptimized();
               } else {
                 this.unblockContent();
+              }
+
+              if (this.sponsorBlockEnabled || this.autoRepeatEnabled) {
+                this.setupVideoPlayerInterval();
               }
             }
             sendResponse({ success: true });
@@ -147,6 +174,11 @@ class YouTubeVancedPlugin {
           blockedElements += this.blockShortsInFeedOptimized();
           this.redirectShortsUrls();
           this.updateBlockedCount(blockedElements);
+        }
+        
+        // Ad blocking
+        if (this.adBlockerEnabled) {
+          this.hideAdsOptimized();
         }
         
         const endTime = performance.now();
@@ -434,6 +466,112 @@ class YouTubeVancedPlugin {
         clearTimeout(mutationTimeout);
       }
     });
+  }
+
+  /* ================= Ad Blocking ================= */
+  hideAdsOptimized() {
+    const adSelectors = [
+      'ytd-display-ad-renderer',
+      'ytd-promoted-sparkles-text-search-renderer',
+      'ytd-video-masthead-ad-v3-renderer',
+      'ytd-carousel-ad-renderer',
+      'ytd-ad-slot-renderer',
+      'ytd-in-feed-ad-layout-renderer',
+      'ytd-search-pyv-renderer',
+      'ytd-companion-slot-renderer',
+      'ytd-banner-promo-renderer',
+      '#player-ads',
+      '.ytp-ad-progress-list',
+      '.video-ads',
+      '.ytp-ad-module',
+      '.ytp-ad-overlay-container'
+    ];
+
+    let blocked = 0;
+    adSelectors.forEach(sel => {
+      const els = document.querySelectorAll(sel + ':not([data-vanced-blocked])');
+      if (els.length) {
+        blocked += this.hideElementsBatch(Array.from(els));
+      }
+    });
+    if(blocked>0) {
+      console.debug('Ad elements blocked:', blocked);
+    }
+  }
+
+  /* ================= Video Player Enhancements ================= */
+  setupVideoPlayerInterval() {
+    if (this.playerCheckInterval) return; // already running
+
+    this.playerCheckInterval = setInterval(() => {
+      if (!document.location.pathname.startsWith('/watch')) return;
+
+      const videoId = this.extractVideoId();
+      if (!videoId) return;
+
+      if (this.currentVideoId !== videoId) {
+        this.currentVideoId = videoId;
+        this.sponsorSegments = [];
+
+        if (this.sponsorBlockEnabled) {
+          this.fetchSponsorSegments(videoId);
+        }
+      }
+
+      const video = document.querySelector('video');
+      if (video) {
+        this.attachPlayerEvents(video);
+      }
+
+    }, 1000);
+  }
+
+  extractVideoId() {
+    const url = new URL(location.href);
+    if (url.pathname.startsWith('/watch')) {
+      return url.searchParams.get('v');
+    }
+    return null;
+  }
+
+  fetchSponsorSegments(videoId) {
+    const now = Date.now();
+    if (now - this.lastFetchTime < 10000) return; // rate limit
+    this.lastFetchTime = now;
+
+    fetch(`https://sponsor.ajay.app/api/skipSegments?videoID=${videoId}`)
+      .then(r => r.json())
+      .then(data => {
+        // data is array of objects with segment array [start,end]
+        this.sponsorSegments = (data || []).map(d => d.segment).filter(Boolean);
+        console.debug('Fetched sponsor segments:', this.sponsorSegments);
+      })
+      .catch(err => console.warn('SponsorBlock fetch error', err));
+  }
+
+  attachPlayerEvents(video) {
+    if (!video._vancedEnhancementsAttached) {
+      video.addEventListener('timeupdate', () => {
+        if (this.sponsorBlockEnabled && this.sponsorSegments.length) {
+          const t = video.currentTime;
+          for (const seg of this.sponsorSegments) {
+            if (t >= seg[0] && t < seg[1] - 0.3) {
+              video.currentTime = seg[1] + 0.05;
+              break;
+            }
+          }
+        }
+      });
+
+      if (this.autoRepeatEnabled) {
+        video.addEventListener('ended', () => {
+          video.currentTime = 0;
+          video.play().catch(()=>{});
+        });
+      }
+
+      video._vancedEnhancementsAttached = true;
+    }
   }
 }
 

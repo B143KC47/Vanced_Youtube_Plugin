@@ -338,6 +338,37 @@
     ::-webkit-scrollbar-thumb:hover {
       background: #484f58;
     }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .tab-btn {
+      padding: 10px 16px;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: #21262d;
+      color: #e6e6e6;
+    }
+
+    .tab-btn.active {
+      background: #ffffff;
+      color: #0d1117;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
   </style>
 </head>
 <body>
@@ -348,73 +379,152 @@
   </div>
 
   <div class="content">
-    <!-- YouTube Shorts Control -->
-    <div class="control-group animation-enter">
-      <div class="control-header">
-        <div class="control-info">
-          <div class="control-icon">📱</div>
-          <div class="control-text">
-            <h3>YouTube Shorts</h3>
-            <p>Block short-form videos</p>
+    <!-- Tabs Navigation -->
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="general">General</button>
+      <button class="tab-btn" data-tab="video">Video</button>
+      <button class="tab-btn" data-tab="ads">Ads</button>
+    </div>
+
+    <!-- Tab: General (existing content) -->
+    <div class="tab-content active" id="tab-general">
+      <!-- YouTube Shorts Control -->
+      <div class="control-group animation-enter">
+        <div class="control-header">
+          <div class="control-info">
+            <div class="control-icon">📱</div>
+            <div class="control-text">
+              <h3>YouTube Shorts</h3>
+              <p>Block short-form videos</p>
+            </div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="shortsToggle">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="status-indicator status-active" id="shortsStatus">
+          <div class="status-dot"></div>
+          <span>Shorts are blocked</span>
+        </div>
+      </div>
+
+      <!-- General Blocker Control -->
+      <div class="control-group animation-enter">
+        <div class="control-header">
+          <div class="control-info">
+            <div class="control-icon">🛡️</div>
+            <div class="control-text">
+              <h3>Content Filter</h3>
+              <p>Enhanced blocking system</p>
+            </div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="enableToggle">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="status-indicator status-active" id="statusText">
+          <div class="status-dot"></div>
+          <span>Protection active</span>
+        </div>
+      </div>
+
+      <!-- Statistics -->
+      <div class="stats-section animation-enter">
+        <div class="stats-header">
+          <div class="stats-icon">📊</div>
+          <div class="stats-text">
+            <h3>Statistics</h3>
+            <p>Blocking performance</p>
           </div>
         </div>
-        <label class="toggle-switch">
-          <input type="checkbox" id="shortsToggle">
-          <span class="slider"></span>
-        </label>
-      </div>
-      <div class="status-indicator status-active" id="shortsStatus">
-        <div class="status-dot"></div>
-        <span>Shorts are blocked</span>
-      </div>
-    </div>
-
-    <!-- General Blocker Control -->
-    <div class="control-group animation-enter">
-      <div class="control-header">
-        <div class="control-info">
-          <div class="control-icon">🛡️</div>
-          <div class="control-text">
-            <h3>Content Filter</h3>
-            <p>Enhanced blocking system</p>
+        <div class="stats-grid">
+          <div class="stat-item">
+            <div class="stat-number" id="blockedCount">0</div>
+            <div class="stat-label">Shorts Blocked</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-number" id="sessionsCount">1</div>
+            <div class="stat-label">Sessions</div>
           </div>
         </div>
-        <label class="toggle-switch">
-          <input type="checkbox" id="enableToggle">
-          <span class="slider"></span>
-        </label>
       </div>
-      <div class="status-indicator status-active" id="statusText">
-        <div class="status-dot"></div>
-        <span>Protection active</span>
+
+      <!-- Action Buttons -->
+      <div class="action-buttons">
+        <button class="btn" id="refreshBtn">🔄 Refresh</button>
+        <button class="btn btn-primary" id="settingsBtn">⚙️ Settings</button>
       </div>
     </div>
 
-    <!-- Statistics -->
-    <div class="stats-section animation-enter">
-      <div class="stats-header">
-        <div class="stats-icon">📊</div>
-        <div class="stats-text">
-          <h3>Statistics</h3>
-          <p>Blocking performance</p>
+    <!-- Tab: Video (placeholder) -->
+    <div class="tab-content" id="tab-video">
+      <!-- SponsorBlock Control -->
+      <div class="control-group animation-enter">
+        <div class="control-header">
+          <div class="control-info">
+            <div class="control-icon">⏩</div>
+            <div class="control-text">
+              <h3>SponsorBlock</h3>
+              <p>Skip sponsored segments</p>
+            </div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="sponsorToggle">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="status-indicator" id="sponsorStatus">
+          <div class="status-dot"></div>
+          <span>Feature disabled</span>
         </div>
       </div>
-      <div class="stats-grid">
-        <div class="stat-item">
-          <div class="stat-number" id="blockedCount">0</div>
-          <div class="stat-label">Shorts Blocked</div>
+
+      <!-- Auto Repeat Control -->
+      <div class="control-group animation-enter">
+        <div class="control-header">
+          <div class="control-info">
+            <div class="control-icon">🔁</div>
+            <div class="control-text">
+              <h3>Auto Repeat</h3>
+              <p>Loop video when ended</p>
+            </div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="repeatToggle">
+            <span class="slider"></span>
+          </label>
         </div>
-        <div class="stat-item">
-          <div class="stat-number" id="sessionsCount">1</div>
-          <div class="stat-label">Sessions</div>
+        <div class="status-indicator" id="repeatStatus">
+          <div class="status-dot"></div>
+          <span>Feature disabled</span>
         </div>
       </div>
     </div>
 
-    <!-- Action Buttons -->
-    <div class="action-buttons">
-      <button class="btn" id="refreshBtn">🔄 Refresh</button>
-      <button class="btn btn-primary" id="settingsBtn">⚙️ Settings</button>
+    <!-- Tab: Ads (placeholder) -->
+    <div class="tab-content" id="tab-ads">
+      <!-- Ad Block Control -->
+      <div class="control-group animation-enter">
+        <div class="control-header">
+          <div class="control-info">
+            <div class="control-icon">🚫</div>
+            <div class="control-text">
+              <h3>Ad Blocker</h3>
+              <p>Hide YouTube layout ads</p>
+            </div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="adsToggle">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="status-indicator" id="adsStatus">
+          <div class="status-dot"></div>
+          <span>Feature disabled</span>
+        </div>
+      </div>
     </div>
   </div>
 

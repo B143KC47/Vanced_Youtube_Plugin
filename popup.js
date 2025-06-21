@@ -11,7 +11,14 @@ document.addEventListener('DOMContentLoaded', function() {
     sessionsCount: document.getElementById('sessionsCount'),
     refreshBtn: document.getElementById('refreshBtn'),
     settingsBtn: document.getElementById('settingsBtn'),
-    controlGroups: document.querySelectorAll('.control-group, .stats-section')
+    controlGroups: document.querySelectorAll('.control-group, .stats-section'),
+    tabBtns: document.querySelectorAll('.tab-btn'),
+    sponsorToggle: document.getElementById('sponsorToggle'),
+    repeatToggle: document.getElementById('repeatToggle'),
+    adsToggle: document.getElementById('adsToggle'),
+    sponsorStatus: document.getElementById('sponsorStatus'),
+    repeatStatus: document.getElementById('repeatStatus'),
+    adsStatus: document.getElementById('adsStatus')
   };
 
   // 性能优化：状态缓存，减少重复计算
@@ -107,7 +114,10 @@ document.addEventListener('DOMContentLoaded', function() {
       'shortsBlockerEnabled', 
       'shortsOnlyMode',
       'blockedShortsCount',
-      'sessionCount'
+      'sessionCount',
+      'sponsorBlockEnabled',
+      'autoRepeatEnabled',
+      'adBlockerEnabled'
     ], function(result) {
       // 检查缓存，避免不必要的更新
       if (JSON.stringify(result) === JSON.stringify(cachedSettings)) {
@@ -123,7 +133,11 @@ document.addEventListener('DOMContentLoaded', function() {
       requestAnimationFrame(() => {
         elements.enableToggle.checked = isGeneralEnabled;
         elements.shortsToggle.checked = isShortsEnabled;
+        elements.sponsorToggle.checked = result.sponsorBlockEnabled !== false;
+        elements.repeatToggle.checked = result.autoRepeatEnabled !== false;
+        elements.adsToggle.checked = result.adBlockerEnabled !== false;
         updateStatusBatch(isGeneralEnabled, isShortsEnabled);
+        updateExtraStatus();
         updateStatisticsBatch(result.blockedShortsCount || 0, result.sessionCount || 1);
       });
     });
@@ -207,6 +221,25 @@ document.addEventListener('DOMContentLoaded', function() {
         incrementBlockedCountOptimized();
       }
       isUpdating = false;
+    });
+  }
+
+  function handleSponsorToggle() {
+    chrome.storage.sync.set({sponsorBlockEnabled: elements.sponsorToggle.checked}, ()=>{
+      updateExtraStatus();
+    });
+  }
+
+  function handleRepeatToggle() {
+    chrome.storage.sync.set({autoRepeatEnabled: elements.repeatToggle.checked}, ()=>{
+      updateExtraStatus();
+    });
+  }
+
+  function handleAdsToggle() {
+    chrome.storage.sync.set({adBlockerEnabled: elements.adsToggle.checked}, ()=>{
+      updateExtraStatus();
+      debouncedRefreshTab();
     });
   }
 
@@ -402,9 +435,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // 初始化应用
   function initialize() {
+    setupTabs();
     // 绑定事件监听器
     elements.enableToggle.addEventListener('change', handleGeneralToggle);
     elements.shortsToggle.addEventListener('change', handleShortsToggle);
+    if(elements.sponsorToggle) elements.sponsorToggle.addEventListener('change', handleSponsorToggle);
+    if(elements.repeatToggle) elements.repeatToggle.addEventListener('change', handleRepeatToggle);
+    if(elements.adsToggle) elements.adsToggle.addEventListener('change', handleAdsToggle);
     elements.refreshBtn.addEventListener('click', handleRefresh);
     elements.settingsBtn.addEventListener('click', handleSettings);
 
@@ -417,6 +454,50 @@ document.addEventListener('DOMContentLoaded', function() {
     addHoverEffects();
     setupKeyboardNavigation();
     startSmartStatisticsUpdate();
+  }
+
+  // 设置 Tabs 切换
+  function setupTabs() {
+    if (!elements.tabBtns || elements.tabBtns.length === 0) return;
+
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    elements.tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const target = btn.dataset.tab;
+
+        // 激活按钮
+        elements.tabBtns.forEach(b => b.classList.toggle('active', b === btn));
+
+        // 显示相应内容
+        tabContents.forEach(content => {
+          content.classList.toggle('active', content.id === `tab-${target}`);
+        });
+      });
+    });
+  }
+
+  function updateExtraStatus() {
+    const setIndicator = (toggleEl, statusEl, onText, offText) => {
+      const span = statusEl.querySelector('span');
+      if(toggleEl.checked){
+        statusEl.classList.add('status-active');
+        span.textContent = onText;
+      }else{
+        statusEl.classList.remove('status-active');
+        span.textContent = offText;
+      }
+    };
+
+    if(elements.sponsorToggle && elements.sponsorStatus){
+      setIndicator(elements.sponsorToggle, elements.sponsorStatus,'Skipping enabled','Feature disabled');
+    }
+    if(elements.repeatToggle && elements.repeatStatus){
+      setIndicator(elements.repeatToggle, elements.repeatStatus,'Auto repeat enabled','Feature disabled');
+    }
+    if(elements.adsToggle && elements.adsStatus){
+      setIndicator(elements.adsToggle, elements.adsStatus,'Ads blocked','Feature disabled');
+    }
   }
 
   // 启动应用
