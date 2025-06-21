@@ -52,6 +52,15 @@ class YouTubeVancedPlugin {
     // Kick-off token extraction in the background
     this.initDecipher();
     
+    /**
+     * SponsorBlock segment cache shared across plugin instances in the same page.
+     * Map<videoId, {segments: number[][], ts: number}>
+     */
+    if (!window.__vancedSponsorCache) {
+      window.__vancedSponsorCache = new Map();
+    }
+    this._sponsorCache = window.__vancedSponsorCache;
+    
     this.init();
   }
 
@@ -227,6 +236,9 @@ class YouTubeVancedPlugin {
         if (this.hideEndScreenEnabled || this.hideInfoCardEnabled || this.hideWatermarkEnabled || this.hideStoriesEnabled) {
           this.hideLayoutElementsOptimized();
         }
+        
+        // NEW: Collapse empty rows/sections to avoid blank spaces
+        this.collapseEmptyContainers();
         
         const endTime = performance.now();
         console.debug(`Blocking completed in ${endTime - startTime}ms, blocked: ${blockedElements}`);
@@ -570,6 +582,40 @@ class YouTubeVancedPlugin {
         console.debug('Ad containers blocked (with outer wrappers):', blocked);
       }
     }
+
+    /* === Badge & Keyword based ad detection (new) === */
+    const badgeSelectors = [
+      '.badge-style-type-ad',
+      '[aria-label*="Sponsored" i]',
+      '[aria-label*="广告" i]',
+      'yt-formatted-string[title*="赞助商广告" i]'
+    ];
+
+    badgeSelectors.forEach(sel => {
+      document.querySelectorAll(sel + ':not([data-vanced-blocked])').forEach(badge => {
+        const container = badge.closest(
+          'ytd-rich-item-renderer, ytd-rich-section-renderer, ytd-video-renderer, ytd-grid-video-renderer, ytd-compact-video-renderer, ytd-ad-slot-renderer, ytd-in-feed-ad-layout-renderer'
+        );
+        if (container && !this.blockedElements.has(container)) {
+          containers.add(container);
+        }
+      });
+    });
+
+    // Fallback keyword scan for sponsored ads in rich items
+    document.querySelectorAll('ytd-rich-item-renderer:not([data-vanced-blocked])').forEach(item => {
+      const txt = item.textContent || '';
+      if (/赞助商广告|Sponsored Ad|Sponsored|广告/i.test(txt)) {
+        containers.add(item);
+      }
+    });
+
+    if (containers.size > 0) {
+      const blocked2 = this.hideElementsBatch(Array.from(containers));
+      if (blocked2 > 0) {
+        console.debug('Ad containers blocked (badge/keyword):', blocked2);
+      }
+    }
   }
 
   /* ================= Video Player Enhancements ================= */
@@ -608,16 +654,43 @@ class YouTubeVancedPlugin {
   }
 
   fetchSponsorSegments(videoId) {
+    const cached = this._sponsorCache.get(videoId);
     const now = Date.now();
-    if (now - this.lastFetchTime < 10000) return; // rate limit
+
+    // Re-use cache if fresher than 6 hours
+    if (cached && (now - cached.ts) < 6 * 60 * 60 * 1000) {
+      this.sponsorSegments = cached.segments;
+      return;
+    }
+
+    // Rate-limit network calls (10 s)
+    if (now - this.lastFetchTime < 10000) return;
     this.lastFetchTime = now;
 
-    fetch(`https://sponsor.ajay.app/api/skipSegments?videoID=${videoId}`)
-      .then(r => r.json())
-      .then(data => {
-        // data is array of objects with segment array [start,end]
-        this.sponsorSegments = (data || []).map(d => d.segment).filter(Boolean);
-        console.debug('Fetched sponsor segments:', this.sponsorSegments);
+    const categories = encodeURIComponent('["sponsor","selfpromo","interaction","intro","outro"]');
+    const api = `https://sponsor.ajay.app/api/skipSegments?videoID=${videoId}&categories=${categories}`;
+
+    fetch(api)
+      .then(async r => {
+        try {
+          if (!r.ok) return [];
+          const ct = r.headers.get('content-type') || '';
+          if (ct.includes('application/json')) {
+            return await r.json();
+          }
+          // fallback text->json parse safe
+          const txt = await r.text();
+          try { return JSON.parse(txt); } catch { return []; }
+        } catch { return []; }
+      })
+      .then(list => {
+        const segments = Array.isArray(list)
+          ? list.filter(d => Array.isArray(d.segment)).map(d => d.segment).sort((a,b)=>a[0]-b[0])
+          : [];
+
+        this.sponsorSegments = segments;
+        this._sponsorCache.set(videoId, {segments, ts: Date.now()});
+        console.debug('Sponsor segments ready:', segments.length);
       })
       .catch(err => console.warn('SponsorBlock fetch error', err));
   }
@@ -627,8 +700,17 @@ class YouTubeVancedPlugin {
       video.addEventListener('timeupdate', () => {
         if (this.sponsorBlockEnabled && this.sponsorSegments.length) {
           const t = video.currentTime;
-          for (const seg of this.sponsorSegments) {
-            if (t >= seg[0] && t < seg[1] - 0.3) {
+          // Binary search for efficiency (segments sorted by start)
+          let lo = 0, hi = this.sponsorSegments.length - 1;
+          while (lo <= hi) {
+            const mid = (lo + hi) >> 1;
+            const seg = this.sponsorSegments[mid];
+            if (t < seg[0]) {
+              hi = mid - 1;
+            } else if (t >= seg[1] - 0.3) {
+              lo = mid + 1;
+            } else {
+              // inside this segment – skip
               video.currentTime = seg[1] + 0.05;
               break;
             }
@@ -895,6 +977,31 @@ class YouTubeVancedPlugin {
     }
     return a.join('');
   }
+
+  // Collapse empty ytd-rich-grid-row / section to remove gaps
+  collapseEmptyContainers() {
+    try {
+      // Collapse grid rows
+      document.querySelectorAll('ytd-rich-grid-row:not([data-vanced-cleaned])').forEach(row => {
+        const items = row.querySelectorAll('ytd-rich-item-renderer');
+        if (items.length && Array.from(items).every(it => it.hasAttribute('data-vanced-blocked') || it.style.display === 'none')) {
+          row.style.display = 'none';
+          row.setAttribute('data-vanced-blocked', 'true');
+        }
+        row.setAttribute('data-vanced-cleaned', 'true');
+      });
+
+      // Collapse rich sections that are empty
+      document.querySelectorAll('ytd-rich-section-renderer:not([data-vanced-cleaned])').forEach(sec => {
+        const visible = sec.querySelector('ytd-rich-item-renderer:not([data-vanced-blocked]):not([style*="display: none"])');
+        if (!visible) {
+          sec.style.display = 'none';
+          sec.setAttribute('data-vanced-blocked', 'true');
+        }
+        sec.setAttribute('data-vanced-cleaned', 'true');
+      });
+    } catch(e){ console.debug('collapseEmptyContainers error', e); }
+  }
 }
 
 // Initialize the plugin
@@ -908,4 +1015,19 @@ style.textContent = `
     visibility: hidden !important;
   }
 `;
-document.head.appendChild(style); 
+
+function injectStyleSafely(){
+  const h = document.head || document.getElementsByTagName('head')[0];
+  if (h) {
+    try { h.appendChild(style); } catch(_) { /* ignore */ }
+  } else {
+    document.addEventListener('DOMContentLoaded', () => {
+      const headLater = document.head || document.getElementsByTagName('head')[0];
+      if(headLater && !style.isConnected){
+        headLater.appendChild(style);
+      }
+    }, { once: true });
+  }
+}
+
+injectStyleSafely(); 
