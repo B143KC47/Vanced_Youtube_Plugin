@@ -1,19 +1,19 @@
-# YouTube Shorts Blocker Chrome Extension  
-📺 油管短视频屏蔽器 - Chrome扩展
+# YouTube Vanced Plugin for Chrome  
+🎯 油管增强插件（短视频 & 广告终结者）
 
 A powerful Chrome extension that blocks and hides YouTube Shorts from your YouTube browsing experience.  
 一款强大的浏览器扩展，可自动屏蔽YouTube Shorts短视频，还您清爽的观看体验。
 
-## Features 功能特点
-- 🚫 **Complete Shorts Blocking**...  
-- 🚫 **全面屏蔽**：首页、搜索页、推荐栏中的短视频内容一键消失
-- 🔄 **Real-time Detection**...  
-- 🔄 **实时监控**：动态加载的内容也逃不过火眼金睛
-- 🌐 **URL Redirection**...  
-- 🌐 **智能跳转**：误点shorts链接自动转正常视频模式
-- ⚡ **Toggle Control**: Easy on/off toggle through popup interface
-- 🎨 **Clean UI**: Modern, intuitive popup interface with visual status indicators
-- 💾 **Persistent Settings**: Remembers your preferences across browser sessions
+## Features · 功能亮点
+- 🚫 **Shorts Blocker | 短视频屏蔽** — Hide & redirect every Shorts element across YouTube
+- ⏩ **SponsorBlock | 跳过赞助** — Auto-skip sponsored segments via SponsorBlock API
+- 🛡️ **Ad Cleaner | 广告清理** — Remove layout ads & collapse gaps for seamless browsing
+- 🔁 **Auto Repeat | 循环播放** — Automatically loop the current video on finish
+- 🖼️ **Layout Tweaks | 布局优化** — Hide end-screens, info-cards, watermark & stories
+- ⬇️ **Downloader | 视频/音频下载** — One-click download of any resolution or pure audio
+- 📈 **Statistics | 数据统计** — Live counter for blocked items & sessions
+- 🌙 **Modern UI | 暗黑美学界面** — Responsive tabbed popup with smooth animations
+- 💾 **Cloud Sync | 同步设置** — All preferences stored in chrome.storage across devices
 
 ## What Gets Blocked
 
@@ -47,13 +47,12 @@ A powerful Chrome extension that blocks and hides YouTube Shorts from your YouTu
 5. **Attribute Detection**...  
 5. **特征识别**：通过20+个元素特征精准识别短视频
 
-### Files Structure
-- `manifest.json` - Extension configuration and permissions
-- `content.js` - Main content script that detects and hides shorts
-- `styles.css` - CSS rules for hiding shorts elements
-- `popup.html` - Extension popup interface
-- `popup.js` - Popup functionality and settings management
-- `icons/` - Extension icons (16px, 48px, 128px)
+### File Structure · 文件结构
+- `manifest.json` – Extension manifest & permissions
+- `content.js` – Core logic: blocking, ads, SponsorBlock, downloader
+- `background.js` – Service-worker for messaging & downloads
+- `popup.html / popup.js / styles.css` – Modern dark UI & settings
+- `icon.svg` – Toolbar icon
 
 ### How It Works
 
@@ -65,10 +64,11 @@ The extension uses multiple detection methods:
 4. **Mutation Observer**: Monitors page changes for dynamically loaded content
 5. **Attribute Detection**: Looks for shorts-specific element attributes
 
-### Browser Permissions
+### Browser Permissions · 浏览器权限
 
-- `activeTab`: To interact with YouTube pages
-- `storage`: To save user preferences
+- `activeTab` – Read the current YouTube tab | 读取当前标签页
+- `storage` – Sync user preferences | 同步用户设置
+- `downloads` – Save video/audio streams | 下载并保存媒体文件
 
 ## Compatibility
 
