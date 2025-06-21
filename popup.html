@@ -438,68 +438,68 @@
 
     <!-- Tab: General (existing content) -->
     <div class="tab-content active" id="tab-general">
-      <!-- YouTube Shorts Control -->
-      <div class="control-group animation-enter">
-        <div class="control-header">
-          <div class="control-info">
-            <div class="control-text">
-              <h3>YouTube Shorts</h3>
-              <p>Block short-form videos</p>
-            </div>
+    <!-- YouTube Shorts Control -->
+    <div class="control-group animation-enter">
+      <div class="control-header">
+        <div class="control-info">
+          <div class="control-text">
+            <h3>YouTube Shorts</h3>
+            <p>Block short-form videos</p>
           </div>
-          <label class="toggle-switch">
-            <input type="checkbox" id="shortsToggle">
-            <span class="slider"></span>
-          </label>
         </div>
-        <div class="status-indicator status-active" id="shortsStatus">
-          <div class="status-dot"></div>
-          <span>Shorts are blocked</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="shortsToggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="status-indicator status-active" id="shortsStatus">
+        <div class="status-dot"></div>
+        <span>Shorts are blocked</span>
+      </div>
+    </div>
+
+    <!-- General Blocker Control -->
+    <div class="control-group animation-enter">
+      <div class="control-header">
+        <div class="control-info">
+          <div class="control-text">
+            <h3>Content Filter</h3>
+            <p>Enhanced blocking system</p>
+          </div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="enableToggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="status-indicator status-active" id="statusText">
+        <div class="status-dot"></div>
+        <span>Protection active</span>
+      </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="stats-section animation-enter">
+      <div class="stats-header">
+        <div class="stats-text">
+          <h3>Statistics</h3>
+          <p>Blocking performance</p>
         </div>
       </div>
-
-      <!-- General Blocker Control -->
-      <div class="control-group animation-enter">
-        <div class="control-header">
-          <div class="control-info">
-            <div class="control-text">
-              <h3>Content Filter</h3>
-              <p>Enhanced blocking system</p>
-            </div>
-          </div>
-          <label class="toggle-switch">
-            <input type="checkbox" id="enableToggle">
-            <span class="slider"></span>
-          </label>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-number" id="blockedCount">0</div>
+          <div class="stat-label">Shorts Blocked</div>
         </div>
-        <div class="status-indicator status-active" id="statusText">
-          <div class="status-dot"></div>
-          <span>Protection active</span>
+        <div class="stat-item">
+          <div class="stat-number" id="sessionsCount">1</div>
+          <div class="stat-label">Sessions</div>
         </div>
       </div>
+    </div>
 
-      <!-- Statistics -->
-      <div class="stats-section animation-enter">
-        <div class="stats-header">
-          <div class="stats-text">
-            <h3>Statistics</h3>
-            <p>Blocking performance</p>
-          </div>
-        </div>
-        <div class="stats-grid">
-          <div class="stat-item">
-            <div class="stat-number" id="blockedCount">0</div>
-            <div class="stat-label">Shorts Blocked</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-number" id="sessionsCount">1</div>
-            <div class="stat-label">Sessions</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Action Buttons -->
-      <div class="action-buttons">
+    <!-- Action Buttons -->
+    <div class="action-buttons">
         <button class="btn" id="refreshBtn">Refresh</button>
         <button class="btn btn-primary" id="settingsBtn">Settings</button>
       </div>
