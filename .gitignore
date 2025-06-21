@@ -29,4 +29,9 @@ npm-debug.log*
 
 # Temporary files
 *.tmp
-*.temp 
+*.temp
+
+# GitHub Pages files (only for gh-pages branch)
+site/
+index.html
+.nojekyll 
