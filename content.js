@@ -161,6 +161,18 @@ class YouTubeVancedPlugin {
             }
             sendResponse({ success: true });
             break;
+          case 'getVideoFormats':
+            {
+              const resp = this.getAvailableFormats('video');
+              sendResponse(resp);
+            }
+            break;
+          case 'getAudioFormats':
+            {
+              const resp = this.getAvailableFormats('audio');
+              sendResponse(resp);
+            }
+            break;
           default:
             sendResponse({ success: false, error: 'Unknown action' });
         }
@@ -631,6 +643,103 @@ class YouTubeVancedPlugin {
     if (blocked > 0) {
       console.debug('Layout elements hidden:', blocked);
     }
+  }
+
+  /* ================= Format Extraction ================= */
+  getAvailableFormats(type){
+    try{
+      if(!location.pathname.startsWith('/watch')){
+        return {success:false,message:'Not a watch page'};
+      }
+
+      const player = this.getPlayerResponse();
+      if(!player || !player.streamingData) return {success:false};
+
+      const adaptive = player.streamingData.adaptiveFormats || [];
+      const formats = player.streamingData.formats || [];
+      const list = [...adaptive, ...formats];
+
+      const filtered = [];
+
+      for(const f of list){
+        let directUrl = f.url;
+
+        // Handle signatureCipher/cipher fields
+        if(!directUrl && (f.signatureCipher || f.cipher)){
+          const sc = f.signatureCipher || f.cipher;
+          const params = new URLSearchParams(sc);
+          const urlFromCipher = params.get('url');
+          if(urlFromCipher){
+            if(params.get('sig')){
+              directUrl = urlFromCipher + '&sig=' + params.get('sig');
+            }else if(params.get('signature')){
+              directUrl = urlFromCipher + '&signature=' + params.get('signature');
+            }else{
+              // Encrypted signature ("s") not supported without deciphering
+              directUrl = null;
+            }
+          }
+        }
+
+        if(!directUrl) continue; // skip if no usable URL
+
+        const mime = f.mimeType ? f.mimeType.split(';')[0] : '';
+
+        if(type==='video'){
+          if(!f.qualityLabel || !mime.startsWith('video/')) continue;
+        }else{
+          if(!mime.startsWith('audio/')) continue;
+        }
+
+        filtered.push({
+          url: directUrl,
+          qualityLabel: f.qualityLabel || `${Math.round((f.bitrate||0)/1000)}kbps`,
+          container: mime.split('/')[1] || 'mp4',
+          bitrate: f.bitrate || 0
+        });
+      }
+
+      if(type==='video') {
+        return {success:true, formats: filtered};
+      } else {
+        return {success:true, audio: filtered};
+      }
+    }catch(e){
+      console.warn('getAvailableFormats error', e);
+      return {success:false};
+    }
+  }
+
+  getPlayerResponse(){
+    if(this._cachedPlayerResponse && this._cachedPlayerResponse.streamingData){
+      return this._cachedPlayerResponse;
+    }
+
+    // Attempt direct access (may fail due to isolation)
+    let pr = null;
+    try{ pr = window.ytInitialPlayerResponse; }catch(_){}
+    if(pr && pr.streamingData){
+      this._cachedPlayerResponse = pr;
+      return pr;
+    }
+
+    // Fallback: parse inline <script> JSON
+    const scripts = document.querySelectorAll('script:not([src])');
+    for(const s of scripts){
+      const m = s.textContent.match(/ytInitialPlayerResponse\s*=\s*(\{.+?\})\s*;/s);
+      if(m){
+        try{
+          pr = JSON.parse(m[1]);
+          if(pr && pr.streamingData){
+            this._cachedPlayerResponse = pr;
+            return pr;
+          }
+        }catch(e){
+          console.debug('PlayerResponse JSON parse fail', e);
+        }
+      }
+    }
+    return null;
   }
 }
 

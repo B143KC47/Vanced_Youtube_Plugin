@@ -5,7 +5,8 @@
   "description": "Enhanced YouTube experience with advanced Shorts control, modern UI, and smart content filtering",
   "permissions": [
     "activeTab",
-    "storage"
+    "storage",
+    "downloads"
   ],
   "content_scripts": [
     {
@@ -24,7 +25,8 @@
   },
   "host_permissions": [
     "*://*.youtube.com/*",
-    "https://sponsor.ajay.app/*"
+    "https://sponsor.ajay.app/*",
+    "*://*.googlevideo.com/*"
   ],
   "web_accessible_resources": [
     {

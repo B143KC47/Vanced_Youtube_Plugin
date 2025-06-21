@@ -122,7 +122,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     updateBlockedCount: handleUpdateBlockedCount,
     getStatistics: handleGetStatistics,
     incrementSession: handleIncrementSession,
-    batchUpdate: handleBatchUpdate // 新增批量更新处理
+    batchUpdate: handleBatchUpdate, // 新增批量更新处理
+    downloadURL: handleDownloadURL
   };
   
   const handler = messageHandlers[request.action];
@@ -258,6 +259,30 @@ function handleBatchUpdate(request, sender, sendResponse) {
     }
   });
   
+  return true;
+}
+
+// 下载处理
+function handleDownloadURL(request, sender, sendResponse){
+  if(!request.url){
+    sendResponse({success:false,message:'No URL'});
+    return false;
+  }
+  try{
+    chrome.downloads.download({
+      url: request.url,
+      filename: request.filename || 'video.mp4',
+      saveAs: true
+    }, downloadId=>{
+      if(chrome.runtime.lastError){
+        sendResponse({success:false,message:chrome.runtime.lastError.message});
+      }else{
+        sendResponse({success:true, id:downloadId});
+      }
+    });
+  }catch(e){
+    sendResponse({success:false,message:e.message});
+  }
   return true;
 }
 

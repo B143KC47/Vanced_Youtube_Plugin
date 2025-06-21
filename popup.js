@@ -26,7 +26,10 @@ document.addEventListener('DOMContentLoaded', function() {
     endScreenStatus: document.getElementById('endScreenStatus'),
     infoCardStatus: document.getElementById('infoCardStatus'),
     watermarkStatus: document.getElementById('watermarkStatus'),
-    storiesStatus: document.getElementById('storiesStatus')
+    storiesStatus: document.getElementById('storiesStatus'),
+    qualitySelect: document.getElementById('qualitySelect'),
+    downloadVideoBtn: document.getElementById('downloadVideoBtn'),
+    downloadAudioBtn: document.getElementById('downloadAudioBtn')
   };
 
   // 性能优化：状态缓存，减少重复计算
@@ -461,6 +464,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // 初始化应用
   function initialize() {
     setupTabs();
+    setupDownloadTab();
     // 绑定事件监听器
     elements.enableToggle.addEventListener('change', handleGeneralToggle);
     elements.shortsToggle.addEventListener('change', handleShortsToggle);
@@ -538,6 +542,72 @@ document.addEventListener('DOMContentLoaded', function() {
       const [toggleEl, statusEl, onText] = p;
       if(toggleEl && statusEl){
         setIndicator(toggleEl, statusEl, onText, 'Feature disabled');
+      }
+    });
+  }
+
+  /* ================= Download Tab ================= */
+  function setupDownloadTab(){
+    if(!elements.downloadVideoBtn) return;
+
+    elements.downloadVideoBtn.addEventListener('click', ()=>{
+      const option = elements.qualitySelect.options[elements.qualitySelect.selectedIndex];
+      if(option){
+        const url = option.value;
+        const label = option.textContent.split(' ')[0] || 'video';
+        triggerDownload(url, `YouTube-${label}.mp4`);
+      }
+    });
+
+    elements.downloadAudioBtn.addEventListener('click', ()=>{
+      // request audio formats
+      chrome.tabs.query({active:true, currentWindow:true}, tabs=>{
+        if(!tabs[0]) return;
+        chrome.tabs.sendMessage(tabs[0].id, {action:'getAudioFormats'}, res=>{
+          if(res && res.success && res.audio && res.audio.length){
+            const best = res.audio.sort((a,b)=>b.bitrate-a.bitrate)[0];
+            triggerDownload(best.url, `YouTube-audio.m4a`);
+          }else{
+            alert('Cannot fetch audio stream');
+          }
+        });
+      });
+    });
+
+    // Populate quality list when tab shown
+    const downloadTabBtn = Array.from(elements.tabBtns).find(b=>b.dataset.tab==='download');
+    if(downloadTabBtn){
+      downloadTabBtn.addEventListener('click', ()=>refreshQualityList());
+    }
+  }
+
+  function refreshQualityList(){
+    if(!elements.qualitySelect) return;
+    elements.qualitySelect.innerHTML = '<option>Loading...</option>';
+    chrome.tabs.query({active:true, currentWindow:true}, (tabs)=>{
+      if(!tabs[0]) return;
+      chrome.tabs.sendMessage(tabs[0].id, {action:'getVideoFormats'}, (response)=>{
+        elements.qualitySelect.innerHTML='';
+        if(response && response.success && response.formats && response.formats.length){
+          response.formats.forEach(f=>{
+            const opt=document.createElement('option');
+            opt.value=f.url;
+            opt.textContent=`${f.qualityLabel} ${f.container}`;
+            elements.qualitySelect.appendChild(opt);
+          });
+        }else{
+          const opt=document.createElement('option');
+          opt.textContent='No video streams';
+          elements.qualitySelect.appendChild(opt);
+        }
+      });
+    });
+  }
+
+  function triggerDownload(url, filename){
+    chrome.runtime.sendMessage({action:'downloadURL', url, filename}, (res)=>{
+      if(!res || !res.success){
+        alert('Download failed');
       }
     });
   }

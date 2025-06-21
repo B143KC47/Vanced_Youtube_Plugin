@@ -385,6 +385,7 @@
       <button class="tab-btn" data-tab="video">Video</button>
       <button class="tab-btn" data-tab="ads">Ads</button>
       <button class="tab-btn" data-tab="layout">Layout</button>
+      <button class="tab-btn" data-tab="download">Download</button>
     </div>
 
     <!-- Tab: General (existing content) -->
@@ -612,6 +613,27 @@
           <div class="status-dot"></div>
           <span>Feature disabled</span>
         </div>
+      </div>
+    </div>
+
+    <!-- Tab: Download -->
+    <div class="tab-content" id="tab-download">
+      <div class="control-group animation-enter">
+        <div class="control-header">
+          <div class="control-info">
+            <div class="control-icon">⬇️</div>
+            <div class="control-text">
+              <h3>Video Quality</h3>
+              <p>Select stream to download</p>
+            </div>
+          </div>
+          <select id="qualitySelect" style="padding:6px 8px;background:#21262d;border:1px solid #30363d;border-radius:6px;color:#e6e6e6;font-size:13px;"></select>
+        </div>
+        <div class="action-buttons" style="margin-top:8px;">
+          <button class="btn btn-primary" id="downloadVideoBtn">⬇️ Video</button>
+          <button class="btn" id="downloadAudioBtn">🎵 Audio</button>
+        </div>
+        <p style="margin-top:8px;font-size:11px;color:#6e7681;">⚠️ For personal use only</p>
       </div>
     </div>
   </div>
