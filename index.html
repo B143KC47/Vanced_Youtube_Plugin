@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YouTube Vanced Plugin for Chrome</title>
+  <style>
+    /* Simple dark theme styles */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      line-height: 1.6;
+      padding: 0 16px 48px;
+    }
+    header {
+      text-align: center;
+      padding: 40px 0 32px;
+    }
+    header svg {
+      width: 64px;
+      height: 64px;
+    }
+    h1 {
+      font-size: 32px;
+      margin: 16px 0 8px;
+    }
+    h1 span.cn { display: block; font-size: 20px; font-weight: 400; color: #8b949e; }
+    p.lead { color: #8b949e; max-width: 640px; margin: 0 auto 24px; }
+
+    section { max-width: 900px; margin: 0 auto 48px; }
+    h2 { font-size: 24px; margin-bottom: 12px; color: #ffffff; }
+    ul.feature-list {
+      list-style: none;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 12px;
+    }
+    ul.feature-list li {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    ul.feature-list li span.icon { font-size: 20px; }
+    ul.feature-list li .txt {
+      flex: 1;
+    }
+    ul.feature-list li .txt b { color: #fff; }
+    a.btn {
+      display: inline-block;
+      background: #238636;
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 6px;
+      margin-top: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: background 0.25s;
+    }
+    a.btn:hover { background: #2ea043; }
+
+    footer { text-align: center; color: #6e7681; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <header>
+    <!-- Re-use existing SVG icon -->
+    <svg width="64" height="64" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="24" cy="24" r="24" fill="#667eea" />
+      <text x="24" y="32" text-anchor="middle" fill="white" font-size="24" font-family="sans-serif">🎯</text>
+    </svg>
+    <h1>YouTube Vanced Plugin <span class="cn">油管增强插件</span></h1>
+    <p class="lead">Enhanced YouTube experience for Chrome — block Shorts, ads, skip sponsors and more.<br />
+      为 Chrome 打造的 YouTube 增强体验：短视频&广告终结者、赞助片段跳过等。</p>
+    <a class="btn" href="https://github.com/USERNAME/REPO/archive/refs/heads/main.zip" target="_blank">📦 Download ZIP 下载</a>
+  </header>
+
+  <section>
+    <h2>Features · 功能亮点</h2>
+    <ul class="feature-list">
+      <li><span class="icon">🚫</span><div class="txt"><b>Shorts Blocker</b><br />短视频屏蔽 &amp; 自动跳转</div></li>
+      <li><span class="icon">🛡️</span><div class="txt"><b>Ad Cleaner</b><br />版面广告清除 &amp; 自动收缩空隙</div></li>
+      <li><span class="icon">⏩</span><div class="txt"><b>SponsorBlock</b><br />赞助片段自动跳过</div></li>
+      <li><span class="icon">🔁</span><div class="txt"><b>Auto Repeat</b><br />视频结束自动循环播放</div></li>
+      <li><span class="icon">⬇️</span><div class="txt"><b>Downloader</b><br />一键下载 视频 / 音频</div></li>
+      <li><span class="icon">🌙</span><div class="txt"><b>Modern UI</b><br />多标签卡暗黑界面</div></li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Quick Start · 快速开始</h2>
+    <ol style="margin-left: 18px;">
+      <li>Download the <b>ZIP</b> above and extract it / 下载上方 <b>ZIP</b> 并解压。</li>
+      <li>Open <code>chrome://extensions/</code>, enable <b>Developer mode</b> / 打开扩展开发者模式。</li>
+      <li>Click <b>Load unpacked</b> & choose the folder / 选择解压后的文件夹。</li>
+      <li>Pin 🎯 icon & enjoy! / 固定 📌 图标，开始享受！</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Links · 相关链接</h2>
+    <p>
+      <a href="https://github.com/USERNAME/REPO" style="color:#58a6ff;">Source Code 源码仓库</a> ·
+      <a href="https://github.com/USERNAME/REPO/issues" style="color:#58a6ff;">Issues 问题反馈</a>
+    </p>
+  </section>
+
+  <footer>
+    v2.0 — MIT License · 2025
+  </footer>
+</body>
+</html> 
