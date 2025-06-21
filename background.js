@@ -14,6 +14,10 @@ chrome.runtime.onInstalled.addListener((details) => {
       sponsorBlockEnabled: true,
       adBlockerEnabled: true,
       autoRepeatEnabled: false,
+      hideEndScreenEnabled: true,
+      hideInfoCardEnabled: true,
+      hideWatermarkEnabled: true,
+      hideStoriesEnabled: true,
       blockedShortsCount: 0,
       sessionCount: 1,
       lastCleanup: Date.now()

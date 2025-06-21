@@ -7,6 +7,10 @@ class YouTubeVancedPlugin {
     this.sponsorBlockEnabled = false;
     this.autoRepeatEnabled = false;
     this.adBlockerEnabled = false;
+    this.hideEndScreenEnabled = false;
+    this.hideInfoCardEnabled = false;
+    this.hideWatermarkEnabled = false;
+    this.hideStoriesEnabled = false;
     this.blockedCount = 0;
     
     // 性能优化：缓存和状态管理
@@ -53,6 +57,10 @@ class YouTubeVancedPlugin {
       'sponsorBlockEnabled',
       'autoRepeatEnabled',
       'adBlockerEnabled',
+      'hideEndScreenEnabled',
+      'hideInfoCardEnabled',
+      'hideWatermarkEnabled',
+      'hideStoriesEnabled',
       'blockedShortsCount'
     ], (result) => {
       if (!result || typeof result !== 'object') {
@@ -65,6 +73,10 @@ class YouTubeVancedPlugin {
       this.sponsorBlockEnabled = result.sponsorBlockEnabled !== false;
       this.autoRepeatEnabled = result.autoRepeatEnabled !== false;
       this.adBlockerEnabled = result.adBlockerEnabled !== false;
+      this.hideEndScreenEnabled = result.hideEndScreenEnabled !== false;
+      this.hideInfoCardEnabled = result.hideInfoCardEnabled !== false;
+      this.hideWatermarkEnabled = result.hideWatermarkEnabled !== false;
+      this.hideStoriesEnabled = result.hideStoriesEnabled !== false;
       this.blockedCount = result.blockedShortsCount || 0;
       
       if (this.isGeneralEnabled || this.isShortsEnabled) {
@@ -74,6 +86,10 @@ class YouTubeVancedPlugin {
 
       if (this.sponsorBlockEnabled || this.autoRepeatEnabled) {
         this.setupVideoPlayerInterval();
+      }
+
+      if (this.hideEndScreenEnabled || this.hideInfoCardEnabled || this.hideWatermarkEnabled || this.hideStoriesEnabled) {
+        this.hideLayoutElementsOptimized();
       }
     });
 
@@ -124,6 +140,10 @@ class YouTubeVancedPlugin {
               this.sponsorBlockEnabled = message.settings.sponsorBlockEnabled !== false;
               this.autoRepeatEnabled = message.settings.autoRepeatEnabled !== false;
               this.adBlockerEnabled = message.settings.adBlockerEnabled !== false;
+              this.hideEndScreenEnabled = message.settings.hideEndScreenEnabled !== false;
+              this.hideInfoCardEnabled = message.settings.hideInfoCardEnabled !== false;
+              this.hideWatermarkEnabled = message.settings.hideWatermarkEnabled !== false;
+              this.hideStoriesEnabled = message.settings.hideStoriesEnabled !== false;
               
               if (this.isGeneralEnabled || this.isShortsEnabled) {
                 this.blockContentOptimized();
@@ -133,6 +153,10 @@ class YouTubeVancedPlugin {
 
               if (this.sponsorBlockEnabled || this.autoRepeatEnabled) {
                 this.setupVideoPlayerInterval();
+              }
+
+              if (this.hideEndScreenEnabled || this.hideInfoCardEnabled || this.hideWatermarkEnabled || this.hideStoriesEnabled) {
+                this.hideLayoutElementsOptimized();
               }
             }
             sendResponse({ success: true });
@@ -179,6 +203,11 @@ class YouTubeVancedPlugin {
         // Ad blocking
         if (this.adBlockerEnabled) {
           this.hideAdsOptimized();
+        }
+        
+        // Layout hiding
+        if (this.hideEndScreenEnabled || this.hideInfoCardEnabled || this.hideWatermarkEnabled || this.hideStoriesEnabled) {
+          this.hideLayoutElementsOptimized();
         }
         
         const endTime = performance.now();
@@ -571,6 +600,36 @@ class YouTubeVancedPlugin {
       }
 
       video._vancedEnhancementsAttached = true;
+    }
+  }
+
+  /* ================= Layout Hiding ================= */
+  hideLayoutElementsOptimized() {
+    const selectors = [];
+    if (this.hideEndScreenEnabled) {
+      selectors.push('.ytp-ce-element', '.ytp-ce-element-overlay');
+    }
+    if (this.hideInfoCardEnabled) {
+      selectors.push('.ytp-cards-button', '.ytp-cards-button-icon');
+    }
+    if (this.hideWatermarkEnabled) {
+      selectors.push('.ytp-watermark');
+    }
+    if (this.hideStoriesEnabled) {
+      selectors.push('ytd-story-renderer', 'ytd-reel-player-renderer', '#stories');
+    }
+
+    let blocked = 0;
+    if (selectors.length) {
+      selectors.forEach(sel => {
+        const els = document.querySelectorAll(sel + ':not([data-vanced-blocked])');
+        if (els.length) {
+          blocked += this.hideElementsBatch(Array.from(els));
+        }
+      });
+    }
+    if (blocked > 0) {
+      console.debug('Layout elements hidden:', blocked);
     }
   }
 }

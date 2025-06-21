@@ -18,7 +18,15 @@ document.addEventListener('DOMContentLoaded', function() {
     adsToggle: document.getElementById('adsToggle'),
     sponsorStatus: document.getElementById('sponsorStatus'),
     repeatStatus: document.getElementById('repeatStatus'),
-    adsStatus: document.getElementById('adsStatus')
+    adsStatus: document.getElementById('adsStatus'),
+    endScreenToggle: document.getElementById('endScreenToggle'),
+    infoCardToggle: document.getElementById('infoCardToggle'),
+    watermarkToggle: document.getElementById('watermarkToggle'),
+    storiesToggle: document.getElementById('storiesToggle'),
+    endScreenStatus: document.getElementById('endScreenStatus'),
+    infoCardStatus: document.getElementById('infoCardStatus'),
+    watermarkStatus: document.getElementById('watermarkStatus'),
+    storiesStatus: document.getElementById('storiesStatus')
   };
 
   // 性能优化：状态缓存，减少重复计算
@@ -117,7 +125,11 @@ document.addEventListener('DOMContentLoaded', function() {
       'sessionCount',
       'sponsorBlockEnabled',
       'autoRepeatEnabled',
-      'adBlockerEnabled'
+      'adBlockerEnabled',
+      'hideEndScreenEnabled',
+      'hideInfoCardEnabled',
+      'hideWatermarkEnabled',
+      'hideStoriesEnabled'
     ], function(result) {
       // 检查缓存，避免不必要的更新
       if (JSON.stringify(result) === JSON.stringify(cachedSettings)) {
@@ -136,6 +148,10 @@ document.addEventListener('DOMContentLoaded', function() {
         elements.sponsorToggle.checked = result.sponsorBlockEnabled !== false;
         elements.repeatToggle.checked = result.autoRepeatEnabled !== false;
         elements.adsToggle.checked = result.adBlockerEnabled !== false;
+        elements.endScreenToggle.checked = result.hideEndScreenEnabled !== false;
+        elements.infoCardToggle.checked = result.hideInfoCardEnabled !== false;
+        elements.watermarkToggle.checked = result.hideWatermarkEnabled !== false;
+        elements.storiesToggle.checked = result.hideStoriesEnabled !== false;
         updateStatusBatch(isGeneralEnabled, isShortsEnabled);
         updateExtraStatus();
         updateStatisticsBatch(result.blockedShortsCount || 0, result.sessionCount || 1);
@@ -238,6 +254,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function handleAdsToggle() {
     chrome.storage.sync.set({adBlockerEnabled: elements.adsToggle.checked}, ()=>{
+      updateExtraStatus();
+      debouncedRefreshTab();
+    });
+  }
+
+  function handleLayoutToggle(key, toggleEl){
+    const obj = {};
+    obj[key] = toggleEl.checked;
+    chrome.storage.sync.set(obj, ()=>{
       updateExtraStatus();
       debouncedRefreshTab();
     });
@@ -442,6 +467,10 @@ document.addEventListener('DOMContentLoaded', function() {
     if(elements.sponsorToggle) elements.sponsorToggle.addEventListener('change', handleSponsorToggle);
     if(elements.repeatToggle) elements.repeatToggle.addEventListener('change', handleRepeatToggle);
     if(elements.adsToggle) elements.adsToggle.addEventListener('change', handleAdsToggle);
+    if(elements.endScreenToggle) elements.endScreenToggle.addEventListener('change', ()=>handleLayoutToggle('hideEndScreenEnabled', elements.endScreenToggle));
+    if(elements.infoCardToggle) elements.infoCardToggle.addEventListener('change', ()=>handleLayoutToggle('hideInfoCardEnabled', elements.infoCardToggle));
+    if(elements.watermarkToggle) elements.watermarkToggle.addEventListener('change', ()=>handleLayoutToggle('hideWatermarkEnabled', elements.watermarkToggle));
+    if(elements.storiesToggle) elements.storiesToggle.addEventListener('change', ()=>handleLayoutToggle('hideStoriesEnabled', elements.storiesToggle));
     elements.refreshBtn.addEventListener('click', handleRefresh);
     elements.settingsBtn.addEventListener('click', handleSettings);
 
@@ -498,6 +527,19 @@ document.addEventListener('DOMContentLoaded', function() {
     if(elements.adsToggle && elements.adsStatus){
       setIndicator(elements.adsToggle, elements.adsStatus,'Ads blocked','Feature disabled');
     }
+
+    const layoutPairs = [
+      [elements.endScreenToggle, elements.endScreenStatus, 'End screens hidden'],
+      [elements.infoCardToggle, elements.infoCardStatus, 'Info cards hidden'],
+      [elements.watermarkToggle, elements.watermarkStatus, 'Watermark hidden'],
+      [elements.storiesToggle, elements.storiesStatus, 'Stories hidden']
+    ];
+    layoutPairs.forEach(p => {
+      const [toggleEl, statusEl, onText] = p;
+      if(toggleEl && statusEl){
+        setIndicator(toggleEl, statusEl, onText, 'Feature disabled');
+      }
+    });
   }
 
   // 启动应用

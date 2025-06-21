@@ -384,6 +384,7 @@
       <button class="tab-btn active" data-tab="general">General</button>
       <button class="tab-btn" data-tab="video">Video</button>
       <button class="tab-btn" data-tab="ads">Ads</button>
+      <button class="tab-btn" data-tab="layout">Layout</button>
     </div>
 
     <!-- Tab: General (existing content) -->
@@ -521,6 +522,93 @@
           </label>
         </div>
         <div class="status-indicator" id="adsStatus">
+          <div class="status-dot"></div>
+          <span>Feature disabled</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: Layout -->
+    <div class="tab-content" id="tab-layout">
+      <!-- End Screen Control -->
+      <div class="control-group animation-enter">
+        <div class="control-header">
+          <div class="control-info">
+            <div class="control-icon">🏁</div>
+            <div class="control-text">
+              <h3>End Screens</h3>
+              <p>Hide video end screen cards</p>
+            </div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="endScreenToggle">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="status-indicator" id="endScreenStatus">
+          <div class="status-dot"></div>
+          <span>Feature disabled</span>
+        </div>
+      </div>
+
+      <!-- Info Cards Control -->
+      <div class="control-group animation-enter">
+        <div class="control-header">
+          <div class="control-info">
+            <div class="control-icon">ℹ️</div>
+            <div class="control-text">
+              <h3>Info Cards</h3>
+              <p>Hide info cards during playback</p>
+            </div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="infoCardToggle">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="status-indicator" id="infoCardStatus">
+          <div class="status-dot"></div>
+          <span>Feature disabled</span>
+        </div>
+      </div>
+
+      <!-- Watermark Control -->
+      <div class="control-group animation-enter">
+        <div class="control-header">
+          <div class="control-info">
+            <div class="control-icon">💧</div>
+            <div class="control-text">
+              <h3>Video Watermark</h3>
+              <p>Hide channel watermark</p>
+            </div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="watermarkToggle">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="status-indicator" id="watermarkStatus">
+          <div class="status-dot"></div>
+          <span>Feature disabled</span>
+        </div>
+      </div>
+
+      <!-- Stories Control -->
+      <div class="control-group animation-enter">
+        <div class="control-header">
+          <div class="control-info">
+            <div class="control-icon">📖</div>
+            <div class="control-text">
+              <h3>YouTube Stories</h3>
+              <p>Remove stories section</p>
+            </div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="storiesToggle">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="status-indicator" id="storiesStatus">
           <div class="status-dot"></div>
           <span>Feature disabled</span>
         </div>
